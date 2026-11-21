@@ -6,6 +6,7 @@ on:
       - 'src/**'
       - 'tests/**'
       - 'packaging/**'
+      - 'scripts/Test-WindowsCandidate.ps1'
       - '.github/workflows/package-candidates.yml'
 permissions:
   contents: read
