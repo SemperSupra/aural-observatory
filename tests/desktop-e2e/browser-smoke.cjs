@@ -29,7 +29,8 @@ async function ready(){
 async function run(){
  const address=await ready();
  browser=await chromium.launch({headless:true,args:['--no-sandbox']});
- const page=await browser.newPage({viewport:{width:1200,height:800},colorScheme:'light',reducedMotion:'reduce'});
+ const context=await browser.newContext({viewport:{width:1200,height:800},colorScheme:'light',reducedMotion:'reduce'});
+ const page=await context.newPage();
  const fatal=[];
  page.on('pageerror',e=>fatal.push(e.message));
  await page.goto(address,{waitUntil:'domcontentloaded'});
