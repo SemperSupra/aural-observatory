@@ -112,7 +112,7 @@ double Power(double[] signal, double hz)
 }
 static double Slope(double[] hz,double[] powers)
 {
-    var xs=hz.Select(Math.Log).ToArray();
+    var xs=hz.Select(x => Math.Log(x)).ToArray();
     var ys=powers.Select(v=>Math.Log(Math.Max(v,1e-20))).ToArray();
     var xm=xs.Average(); var ym=ys.Average();
     return xs.Zip(ys,(x,y)=>(x-xm)*(y-ym)).Sum() / xs.Select(x=>(x-xm)*(x-xm)).Sum();
