@@ -50,3 +50,11 @@ G1 before distributing an APK; G2/G3 before prolonged listening. G4 independent 
 - **Trust:** No clinical conclusions from subjective silence or HRV; no passive microphones; Personal API key is owned by the user, not checked in or used for public multiuser login; Android speech intent may not be offline despite preference.
 - **Gates:** R6 synthetic build/test and Android compile pending CI; microphone/system provider qualification, live HRM, real Garmin account, device acoustic safety, and N-of-1 study remain open.
 - See `docs/AUTOTUNE-AND-DATASOURCES.md` for algorithms, interfaces, qualification and safety.
+
+## R7 — configurable response controls and public package candidates
+- Three response modes: hold-quiet, release-quiet after audible-arm, and toggled quiet. Core interpreter makes physical-edge interpretation deterministic. Inverse mode is unarmed before first press; phase boundaries reset without importing a false quiet state.
+- Response mode is recorded in R7-local CSV; R6 observations are retained in a separate file to avoid mixed schema.
+- Public-source-only candidate packaging through pinned SHA Actions on standard Ubuntu 24.04, Windows 2025 and macOS 26 runners; the Windows target includes a user-scoped NSIS EXE. These are unpromoted, unsigned/unvalidated artifacts.
+- Private Android and Windows Foundry repositories retain governance, eligibility and release controls. Public product/Foundry planes own reusable build mechanics; no private or personal input data in public CI.
+- G7 status: synthetic build/test and installer compilation PENDING; on-device BLE/ANT+ acquisition, acoustic validation, Windows install/uninstall, signing and production publishing NOT COMPLETE.
+- Authority and acceptance: docs/QUIET-MODES-AND-PACKAGING-R7.md, public PR for this branch, runner census SemperSupra/agent-dispatch-private#223/#281.
