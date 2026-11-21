@@ -8,7 +8,8 @@
 <button id="next">Start / next trial</button> <button id="stop">Stop</button>
 <audio id="sound" preload="auto"></audio>
 </section>
-<section><button id="quiet" aria-label="Hold only while tinnitus seems absent">PRESS AND HOLD WHEN QUIET<br><small>Mouse, touchscreen, or SPACE key</small></button>
+<section><label>Response style: <select id="mode"><option value="HoldWhenQuiet">Hold while quiet</option><option value="ReleaseWhenQuiet">Hold while tinnitus is audible; RELEASE when quiet</option><option value="ToggleQuiet">Tap once to start quiet, again to end</option></select></label>
+<button id="quiet" aria-label="Record perceived tinnitus quiet with selected response style">PRESS AND HOLD WHEN QUIET</button>
 <p>Quiet while sound plays indicates possible masking; quiet after it ends is a separate residual-inhibition observation. Neither objectively detects tinnitus.</p></section>
 <section><label>After-sound tinnitus loudness (optional, 0–10): <input id="loudness" type="number" min="0" max="10" step="0.5"></label>
 <p><label>Notes <textarea id="note" placeholder="e.g. quieter in the left ear, less intrusive, uncomfortable..."></textarea></label></p>
@@ -17,23 +18,36 @@
 const token = '__SESSION_TOKEN__';
 const api = async (url, data) => { const r = await fetch('/api/'+url,{method:'POST',headers:{'Content-Type':'application/json','X-Aural-Token':token},body:JSON.stringify(data??{})});const result=await r.json().catch(()=>({}));if(!r.ok)throw Error(result.error||r.statusText);return result; };
 const status=document.querySelector('#status'),audio=document.querySelector('#sound'),hold=document.querySelector('#quiet');
-let down=false;let active=false;let post=false;
+const mode=document.querySelector('#mode');
+let down=false, quiet=false, armed=false, active=false, post=false;
 function msg(x){status.textContent=x;}
-async function setHold(v){if(down===v)return;if(!active&&!post)return;down=v;hold.classList.toggle('down',v);hold.innerText=v?'QUIET MARK ACTIVE · RELEASE TO END':'PRESS AND HOLD WHEN QUIET';try{await api('hold',{down:v});}catch(e){msg(e.message);}}
+function resetInput(){down=false;quiet=false;armed=false;hold.classList.remove('down');hold.textContent=mode.value==='ReleaseWhenQuiet'?'HOLD WHILE AUDIBLE; RELEASE WHEN QUIET':mode.value==='ToggleQuiet'?'TAP WHEN QUIET (TOGGLE)':'PRESS AND HOLD WHEN QUIET';}
+function updateLabel(){hold.classList.toggle('down',quiet);hold.textContent=mode.value==='ReleaseWhenQuiet'?(down?'AUDIBLE — RELEASE WHEN QUIET':'RELEASED — QUIET MARK ACTIVE'):mode.value==='ToggleQuiet'?(quiet?'QUIET ACTIVE — TAP TO END':'TAP WHEN QUIET (TOGGLE)'):(quiet?'QUIET ACTIVE — RELEASE TO END':'PRESS AND HOLD WHEN QUIET');}
+async function setHold(v){
+ if(!active&&!post)return;
+ if(down===v)return;
+ down=v;
+ if(mode.value==='HoldWhenQuiet'){quiet=v;}
+ else if(mode.value==='ReleaseWhenQuiet'){if(v){armed=true;quiet=false;}else if(armed){quiet=true;}else{return;}}
+ else if(v){quiet=!quiet;}else{return;}
+ updateLabel();
+ try{await api('hold',{down:quiet});}catch(e){msg(e.message);}
+}
 function release(){void setHold(false);}
+mode.addEventListener('change',resetInput);
 hold.addEventListener('pointerdown', e=>{e.preventDefault();hold.setPointerCapture(e.pointerId);void setHold(true)});
 hold.addEventListener('pointerup',release);hold.addEventListener('pointercancel',release);window.addEventListener('blur',release);
 document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){e.preventDefault();void setHold(true);}});
 document.addEventListener('keyup',e=>{if(e.code==='Space'){e.preventDefault();release();}});
 async function annotate(){const value=document.querySelector('#loudness').value;await api('annotate',{note:document.querySelector('#note').value,loudnessAfter:value===''?null:Number(value)})}
 document.querySelector('#save').onclick=async()=>{try{await annotate();msg('Annotation saved to current trial; it will persist when you advance.')}catch(e){msg(e.message)}};
-document.querySelector('#next').onclick=async()=>{try{await annotate();release();const trial=await api('next');if(trial.finished){active=false;post=false;msg('Frequency sweep complete. Review observations and repeat sessions to assess reproducibility.');return;}
-  document.querySelector('#note').value='';document.querySelector('#loudness').value='';active=true;post=false;
+document.querySelector('#next').onclick=async()=>{try{await annotate();const trial=await api('next',{mode:mode.value});if(trial.finished){active=false;post=false;msg('Frequency sweep complete. Review observations and repeat sessions to assess reproducibility.');return;}
+  document.querySelector('#note').value='';document.querySelector('#loudness').value='';active=true;post=false;mode.disabled=true;resetInput();
   audio.src=trial.source+'?token='+token; // token is checked by endpoint below
-  msg(`Trial ${trial.trial}: ${trial.hz.toFixed(0)} Hz, stage ${trial.stage}. Fixed level. Hold during perceived quiet.`);
+  msg(`Trial ${trial.trial}: ${trial.hz.toFixed(0)} Hz, stage ${trial.stage}. Fixed level. Input: ${mode.value}.`);
   await audio.play();
 }catch(e){msg('Could not start: '+e.message);}};
-audio.addEventListener('ended',async()=>{release();active=false;post=true;await api('ended');msg('Stimulus stopped: observe at least 10 seconds. Hold QUIET if ringing remains reduced, then advance.');});
-document.querySelector('#stop').onclick=async()=>{audio.pause();audio.currentTime=0;release();active=false;post=false;await api('interrupt');msg('Stopped. Incomplete trial excluded from ranking.');};
+audio.addEventListener('ended',async()=>{active=false;post=true;await api('ended');resetInput();msg('Stimulus stopped: re-arm your selected input mode to mark post-sound quiet. Observe at least 10 seconds.');});
+document.querySelector('#stop').onclick=async()=>{audio.pause();audio.currentTime=0;active=false;post=false;resetInput();mode.disabled=false;await api('interrupt');msg('Stopped. Incomplete trial excluded from ranking.');};
 document.querySelector('#export').onclick=async()=>{const r=await fetch('/api/export',{headers:{'X-Aural-Token':token}});const txt=await r.text();const blob=new Blob([txt],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='aural-quiet-search.csv';a.click();URL.revokeObjectURL(a.href);};
 </script></body></html>
