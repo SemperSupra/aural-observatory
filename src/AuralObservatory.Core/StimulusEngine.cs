@@ -3,7 +3,7 @@ using System;
 namespace AuralObservatory.Core;
 
 /// <summary>Experimental audio, not clinically calibrated or a medical treatment.</summary>
-public enum NoiseColour { White, Pink, Brown, Blue, Violet }
+public enum NoiseColour { White, Pink, Brown, Blue, Violet, BlueCorrected, VioletCorrected }
 
 public sealed record EarProfile(
     double FrequencyHz = 4000,
@@ -100,7 +100,7 @@ public sealed class StimulusEngine
         private uint _rng;
         private double _brown;
         private double _p0, _p1, _p2, _p3, _p4, _p5, _p6;
-        private double _lastWhite, _olderWhite;
+        private double _lastWhite, _olderWhite, _lastPink;
 
         internal EarChannel(EarProfile profile, uint seed)
         {
@@ -119,13 +119,17 @@ public sealed class StimulusEngine
             switch (_profile.Colour)
             {
                 case NoiseColour.Pink:
+                case NoiseColour.BlueCorrected:
                     _p0 = 0.99886 * _p0 + white * 0.0555179;
                     _p1 = 0.99332 * _p1 + white * 0.0750759;
                     _p2 = 0.96900 * _p2 + white * 0.1538520;
                     _p3 = 0.86650 * _p3 + white * 0.3104856;
                     _p4 = 0.55000 * _p4 + white * 0.5329522;
                     _p5 = -0.7616 * _p5 - white * 0.0168980;
-                    selected = (_p0 + _p1 + _p2 + _p3 + _p4 + _p5 + _p6 + white * 0.5362) * 0.11;
+                    double pink = (_p0 + _p1 + _p2 + _p3 + _p4 + _p5 + _p6 + white * 0.5362) * 0.11;
+                    selected = _profile.Colour == NoiseColour.BlueCorrected
+                        ? (pink - _lastPink) * 0.5 : pink;
+                    _lastPink = pink;
                     _p6 = white * 0.115926;
                     break;
                 case NoiseColour.Brown:
@@ -133,10 +137,16 @@ public sealed class StimulusEngine
                     selected = _brown;
                     break;
                 case NoiseColour.Blue:
+                    // Retained legacy 1st difference of white (~violet PSD); evidence comparison only.
                     selected = (white - _lastWhite) * 0.5;
                     break;
                 case NoiseColour.Violet:
+                    // Retained legacy 2nd difference of white (~f^4 PSD), NOT textbook violet.
                     selected = (white - 2.0 * _lastWhite + _olderWhite) * 0.25;
+                    break;
+                case NoiseColour.VioletCorrected:
+                    // 1st difference of white gives approximately +2 spectral slope (PSD).
+                    selected = (white - _lastWhite) * 0.5;
                     break;
                 default:
                     selected = white * 0.65;
