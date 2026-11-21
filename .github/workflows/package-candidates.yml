@@ -53,6 +53,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Get-ChildItem artifacts -File | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  $(Split-Path $_.Path -Leaf)" } | Set-Content artifacts/SHA256SUMS.txt
           if (!(Test-Path 'artifacts/AuralObservatory-SearchDesktop-Setup-Candidate.exe')) { throw 'Installer absent' }
+      - name: Windows clean install, repeat-install and uninstall (no signing or publication)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/Test-WindowsCandidate.ps1 -Installer 'artifacts/AuralObservatory-SearchDesktop-Setup-Candidate.exe'
       - name: Linux/macOS archive
         if: runner.os != 'Windows'
         shell: bash
