@@ -26,6 +26,8 @@ jobs:
           dotnet-version: 10.0.x
       - run: dotnet run --project tests/AuralObservatory.Preferences.Tests/AuralObservatory.Preferences.Tests.csproj -c Release
       - run: dotnet build src/AuralObservatory.SearchDesktop/AuralObservatory.SearchDesktop.csproj -c Release
+      - name: Check static semantic UI and keyboard contracts
+        run: node tests/ui_static_check.js
       - name: Parse actual desktop inline JavaScript
         shell: bash
         run: |
