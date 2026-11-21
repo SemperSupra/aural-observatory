@@ -6,7 +6,7 @@
 - `AuralObservatory.Sensors.Ble.Windows` — same source with Windows GATT backend; explicitly Windows-targeted .NET TFM.
 - `AuralObservatory.Sensors.Ble.Android` — same source with native Android BLE backend, integrated into the .NET Android UI.
 - `AuralObservatory.SensorConsole` — interactive Windows/Linux diagnostic and optional local CSV recording.
-- The Mac desktop native BLE backend (CoreBluetooth/.NET macOS target) and iOS adapter are **future work**, not falsely claimed complete. The shared protocol and plugin contract do run on macOS as .NET code; a Mac-specific BLE runtime build is needed.
+- The Mac desktop CoreBluetooth-specific target now has a source project and CI compile gate. Its actual BLE pairing and macOS TCC permission prompt remain unverified. iOS support is future work.
 
 The Bluetooth implementation uses the MIT-licensed `InTheHand.BluetoothLE` 4.0.45, source: https://github.com/inthehand/32feet . Native OS BLE backends; no bundled WebView, no Garmin developer account, no cloud, no ANT+ dependencies. Target sensors: Garmin HRM-Pro Plus, Polar H10, GEOID HS500 and any SIG-compliant strap with Heart Rate Service 0x180D and characteristic 0x2A37. HRM-Pro Plus RR availability is **not yet confirmed** and must be measured on the user's device. This plugin does NOT support Garmin proprietary ECG, Garmin Connect, ANT+, or ECG waveforms.
 
@@ -22,10 +22,10 @@ dotnet run --project src/AuralObservatory.SensorConsole/AuralObservatory.SensorC
 
 Expected: `HR=... BPM RR=... ms contact=...`. If `RR=NOT ADVERTISED` even though the heart rate is visible, that is evidence of an RR-absent BLE stream under the current conditions — not proof that the sensor hardware does not support RR via ANT+ or other modes. Test with competing phone/watch connections disabled and record firmware, connection state, and packet counts.
 
-On Linux: install/enable BlueZ and a supported BLE adapter; run the same console command. macOS CoreBluetooth is not yet included in this CLI target; do not treat the Linux `net10.0` binary as a verified macOS BLE implementation.
+On Linux: install/enable BlueZ and a supported BLE adapter; run the same console command. macOS selects a separate CoreBluetooth-specific `net10.0-macos` target requiring the .NET macOS workload and a Bluetooth purpose string in the host app bundle; confirm macOS pairing/permission behavior before claiming it is production-ready.
 
 ## Native Android
-The Android application has optional **Connect**, **Disconnect**, and **Record locally during preview** controls. No hidden background scan or upload. The Android 12+ BLE_SCAN and BLE_CONNECT runtime permissions are requested only on user action. Android 8–11 requires the OS's legacy location permission solely to discover nearby BLE peripherals; code does not request or use GPS/coordinates. The app disconnects when backgrounded. Readings are shown while foregrounded; local CSV recording is opt-in and limited to an active 15-second preview. Files stay in the app sandbox. Stream data is not exported automatically.
+The Android application has optional **Connect**, **Disconnect**, and **Record locally during preview** controls. No hidden background scan or upload. The Android 12+ BLE_SCAN and BLE_CONNECT runtime permissions are requested only on user action. Android 8–11 requires the OS's legacy location permission solely to discover nearby BLE peripherals; code does not request or use GPS/coordinates. The app disconnects when backgrounded. Readings are shown while foregrounded; local CSV recording is opt-in and limited to an active 15-second preview. Files stay in the app sandbox. The user can explicitly use the **Share Sensor CSV** button to export the sandboxed recording; sharing is never automatic.
 
 `MainActivity` presents BPM, RR values if present, contact status and exploratory RMSSD after sufficient RR intervals. No HRV feedback changes stimulus volume or frequency. End-user health benefits must be evaluated with self-reported outcomes, not asserted from RR/HRV.
 
@@ -46,6 +46,6 @@ RR-derived RMSSD uses an exploratory artifact gate: 300–2,000 ms accepted RR a
 3. Windows Dell Qualcomm QCA61x4A + Garmin HRM-Pro Plus: confirm discovery, CCCD notify, 5 min receipt, RR presence, drop/invalid count; repeat after competing-device disconnect.
 4. Android device: permission prompts, pairing, preview simultaneous audio + BLE, screen lock/pause disconnection, file permissions, offline operation.
 5. Time alignment: monotonic clock domain, drift vs output timeline; repeated baseline/test/recovery experiments.
-6. macOS CoreBluetooth target and native UI bridge, followed by ANT+ adapter, are independent workstreams after BLE proof.
+6. macOS CoreBluetooth target compilation plus TCC permission/Info.plist integration and real device test; then ANT+ adapter as a separate workstream.
 
 Do not check physiological recordings, BLE addresses, pairing information or any sensitive session logs into either public or private GitHub repositories.

@@ -61,3 +61,14 @@ jobs:
           dotnet-version: '10.0.x'
       - run: dotnet run --project tests/AuralObservatory.Sensors.Tests/AuralObservatory.Sensors.Tests.csproj --configuration Release
       - run: dotnet build src/AuralObservatory.SensorConsole/AuralObservatory.SensorConsole.csproj --configuration Release
+  sensor-macos:
+    name: Sensor CoreBluetooth target compile (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install macOS SDK workload
+        run: dotnet workload install macos
+      - run: dotnet build src/AuralObservatory.SensorConsole/AuralObservatory.SensorConsole.csproj --configuration Release

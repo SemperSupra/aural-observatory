@@ -81,6 +81,7 @@ public sealed class MainActivity : Activity
         AddButton(layout, "CONNECT BLE HEART-RATE SENSOR", () => _ = ConnectSensorAsync());
         AddButton(layout, "DISCONNECT SENSOR", () => _ = DisconnectSensorAsync());
         _recordSensor = AddCheck(layout, "Record sensor readings locally ONLY while a preview plays", false);
+        AddButton(layout, "SHARE SENSOR READINGS AS CSV", ShareSensorObservations);
         AddText(layout, "SELF-OBSERVATION (0–10)", 19);
         _before = AddNumber(layout, "Tinnitus loudness BEFORE playback", "");
         _after = AddNumber(layout, "Tinnitus loudness AFTER playback", "");
@@ -229,7 +230,15 @@ public sealed class MainActivity : Activity
         }
         catch (System.OperationCanceledException) { _sensorStatus.Text = "Sensor selection cancelled."; await sensor.DisposeAsync(); }
         catch (Exception ex) { _sensorStatus.Text = "BLE connection failed: " + ex.Message; await sensor.DisposeAsync(); }
-        finally { _sensorConnecting = false; }
+        finally
+        {
+            if (_sensor is null)
+            {
+                if (ReferenceEquals(_sensorCts, cts)) _sensorCts = null;
+                cts.Dispose();
+            }
+            _sensorConnecting = false;
+        }
     }
 
     private void ShowSensorObservation(HeartRateObservation observation)
@@ -271,6 +280,16 @@ public sealed class MainActivity : Activity
             try { await sensor.DisposeAsync(); } catch { /* already disconnected */ }
         }
         if (!IsFinishing && _sensorStatus is not null) _sensorStatus.Text = "Sensor disconnected.";
+    }
+
+    private void ShareSensorObservations()
+    {
+        string path = Path.Combine(FilesDir!.AbsolutePath, "ble_sensor_samples.csv");
+        if (!File.Exists(path)) { _sensorStatus.Text = "No sensor recordings yet. Enable opt-in recording during a preview."; return; }
+        var intent = new Intent(Intent.ActionSend);
+        intent.SetType("text/csv");
+        intent.PutExtra(Intent.ExtraText, File.ReadAllText(path));
+        StartActivity(Intent.CreateChooser(intent, "Export local HR and RR observations"));
     }
 
     private StimulusSettings CaptureSettings()
