@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Android.App;
@@ -95,6 +96,9 @@ public sealed class MainActivity : Activity
         AddButton(appearancePanel,"SAVE NAMED AUDIO PRESET",SaveNamedPreset);
         _presetChoice = AddChoice(appearancePanel,"Saved audio presets",new[]{"None saved"},0);
         AddButton(appearancePanel,"LOAD SELECTED PRESET",LoadSelectedPreset);
+        AddButton(appearancePanel,"EXPORT SETTINGS / PRESETS AS JSON",ExportPreferences);
+        AddButton(appearancePanel,"IMPORT SETTINGS / PRESETS FROM JSON",ImportPreferences);
+        AddText(appearancePanel,"User data survives normal installed upgrades but may be removed by uninstall or debug-signature changes. Export before replacing development builds.",12);
         if (preferenceError != null) AddText(appearancePanel,
             "Saved preferences could not be read and were preserved: "+preferenceError,12);
         var soundPanel = AddExpandableSection(layout,"Sound configuration and preview",true);
@@ -390,6 +394,7 @@ public sealed class MainActivity : Activity
     protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
     {
         base.OnActivityResult(requestCode, resultCode, data);
+        if (requestCode is 471 or 472) { HandlePreferencesDocument(requestCode, resultCode, data); return; }
         if (requestCode != 470 || resultCode != Result.Ok || data is null) return;
         var phrases = data.GetStringArrayListExtra(RecognizerIntent.ExtraResults);
         if (phrases is { Count: > 0 }) _voiceNote.Text = phrases[0];
@@ -591,6 +596,66 @@ public sealed class MainActivity : Activity
         _status.Text="Finish/stop the current experiment before changing appearance or presets.";
         return false;
     }
+    private void ExportPreferences()
+    {
+        if(!CanChangeProfile())return;
+        try {
+            // A user-chosen Storage Access Framework document, no broad file permission.
+            var intent=new Intent(Intent.ActionCreateDocument);
+            intent.AddCategory(Intent.CategoryOpenable);
+            intent.SetType("application/json");
+            intent.PutExtra(Intent.ExtraTitle,"aural-observatory-preferences-v1.json");
+            StartActivityForResult(intent,472);
+        }catch(Exception ex){_status.Text="Settings export failed: "+ex.Message;}
+    }
+    private void ImportPreferences()
+    {
+        if(!CanChangeProfile())return;
+        try{
+            var intent=new Intent(Intent.ActionOpenDocument);
+            intent.AddCategory(Intent.CategoryOpenable);
+            intent.SetType("application/json");
+            StartActivityForResult(intent,471);
+        }catch(Exception ex){_status.Text="Settings import failed: "+ex.Message;}
+    }
+    private void HandlePreferencesDocument(int requestCode,Result resultCode,Intent? data)
+    {
+        if(resultCode!=Result.Ok || data?.Data is null)return;
+        if(!CanChangeProfile())return;
+        try{
+            using var stream=(requestCode==471
+                ? ContentResolver!.OpenInputStream(data.Data)
+                : ContentResolver!.OpenOutputStream(data.Data))
+                ?? throw new IOException("Document stream unavailable");
+            if(requestCode==471){
+                using var reader=new StreamReader(stream,Encoding.UTF8);
+                var buffer=new char[65537];
+                int count=reader.ReadBlock(buffer,0,buffer.Length);
+                if(count>=buffer.Length)throw new IOException("Preferences JSON exceeds 64 KiB");
+                var incoming=UserPreferencesStore.FromJson(new string(buffer,0,count));
+                // No app settings changed until the entire document validates.
+                UserPreferencesStore.WriteFile(_preferencesPath,incoming);
+                _preferences=incoming;
+                ApplyStimulusToFields(incoming.LastStimulus);
+                _quietMode.SetSelection((int)incoming.ResponseMode);
+                _appearanceChoice.SetSelection((int)incoming.Appearance);
+                _fontChoice.SetSelection((int)incoming.FontFamily);
+                int index=Array.IndexOf(new[]{80,100,125,150,200},incoming.FontScalePercent);
+                _sizeChoice.SetSelection(index<0?1:index);
+                _contrastChoice.Checked=incoming.HighContrast;
+                _motionChoice.Checked=incoming.ReduceMotion;
+                RefreshPresetChoices();
+                ApplyAppearance();
+                _status.Text="Preferences imported after schema validation; previous data preserved until import completed.";
+            } else {
+                var bytes=Encoding.UTF8.GetBytes(UserPreferencesStore.ToJson(_preferences));
+                stream.Write(bytes,0,bytes.Length);
+                stream.Flush();
+                _status.Text="Settings/presets exported to the location you selected.";
+            }
+        }catch(Exception ex){_status.Text="Settings document operation failed: "+ex.Message;}
+    }
+
     private void SavePreferences()
     {
         if(!CanChangeProfile())return;
