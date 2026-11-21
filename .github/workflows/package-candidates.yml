@@ -48,7 +48,8 @@ jobs:
           $makensis = Join-Path ${env:ProgramFiles(x86)} 'NSIS/makensis.exe'
           if (!(Test-Path $makensis)) { throw 'NSIS compiler absent' }
           $absolute = (Resolve-Path 'publish/win-x64').Path
-          & $makensis "/DPRODUCT_DIR=$absolute" "packaging/windows/AuralObservatory.nsi"
+          $outputFile = Join-Path (Resolve-Path 'artifacts').Path 'AuralObservatory-SearchDesktop-Setup-Candidate.exe'
+          & $makensis "/DPRODUCT_DIR=$absolute" "/DOUTPUT_FILE=$outputFile" "packaging/windows/AuralObservatory.nsi"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Get-ChildItem artifacts -File | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  $(Split-Path $_.Path -Leaf)" } | Set-Content artifacts/SHA256SUMS.txt
           if (!(Test-Path 'artifacts/AuralObservatory-SearchDesktop-Setup-Candidate.exe')) { throw 'Installer absent' }
