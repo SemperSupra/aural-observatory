@@ -45,6 +45,8 @@ public sealed class MainActivity : Activity
     private TextView _searchStatus = null!;
     private EditText _voiceNote = null!;
     private Button _quietHold = null!;
+    private Spinner _quietMode = null!;
+    private readonly QuietInputController _quietInput = new();
     private double _lastSoundStoppedAt;
 
 
@@ -91,6 +93,13 @@ public sealed class MainActivity : Activity
         AddButton(layout, "SHARE SENSOR READINGS AS CSV", ShareSensorObservations);
         AddText(layout, "QUIET SEARCH (EXPERIMENTAL)", 19);
         AddText(layout, "Randomized fixed-level frequency trials. Hold QUIET only while tinnitus SEEMS absent. During sound = masking; after sound = possible residual inhibition. Never increases volume. Not evidence of efficacy.", 12);
+        AddText(layout, "Response style (choose before starting search)", 13);
+        _quietMode = new Spinner(this);
+        var modeAdapter = new ArrayAdapter<string>(this, Android.Resource.Layout.SimpleSpinnerItem,
+            new[] { "Hold when quiet", "Hold while audible; RELEASE when quiet", "Tap to toggle quiet" });
+        modeAdapter.SetDropDownViewResource(Android.Resource.Layout.SimpleSpinnerDropDownItem);
+        _quietMode.Adapter = modeAdapter;
+        layout.AddView(_quietMode);
         _searchStatus = AddText(layout, "No search started. Each candidate plays for 15 seconds; mark quiet during and after sound.", 13);
         AddButton(layout, "START / NEXT SEARCH TRIAL", SearchNext);
         _quietHold = AddButton(layout, "PRESS AND HOLD WHEN QUIET", () => { });
@@ -201,7 +210,8 @@ public sealed class MainActivity : Activity
                     {
                         _lastSoundStoppedAt = QuietSearch.NowSeconds();
                         _search.SoundStopped(_lastSoundStoppedAt);
-                        _searchStatus.Text = "SOUND STOPPED. Hold QUIET if tinnitus remains reduced. Rate or dictate after a silent observation window (minimum 10 s).";
+                        _quietInput.Cancel(); // A new response phase must be deliberately armed.
+                        _searchStatus.Text = "SOUND STOPPED. Re-arm the selected response style to mark post-sound quiet. Wait at least 10 seconds before advancing.";
                     }
                     else
                     {
@@ -228,7 +238,9 @@ public sealed class MainActivity : Activity
     protected override void OnPause()
     {
         StopPreview();
-        QuietButton(false);
+        if (_search?.State is SearchState.Stimulating or SearchState.PostStimulus)
+            _search.MarkQuiet(false, QuietSearch.NowSeconds());
+        _quietInput.Cancel();
         _ = DisconnectSensorAsync(); // foreground-only capture; no silent background sampling
         base.OnPause();
     }
@@ -250,8 +262,14 @@ public sealed class MainActivity : Activity
     private void QuietButton(bool down)
     {
         if (_search?.State is not (SearchState.Stimulating or SearchState.PostStimulus)) return;
-        _search.MarkQuiet(down, QuietSearch.NowSeconds());
-        _quietHold.Text = down ? "QUIET MARK ACTIVE — RELEASE TO END" : "PRESS AND HOLD WHEN QUIET";
+        var quiet = _quietInput.Process(down);
+        if (quiet.HasValue) _search.MarkQuiet(quiet.Value, QuietSearch.NowSeconds());
+        _quietHold.Text = _quietInput.Mode switch
+        {
+            QuietInputMode.ReleaseWhenQuiet => down ? "AUDIBLE — RELEASE WHEN QUIET" : "PRESS WHILE AUDIBLE; RELEASE WHEN QUIET",
+            QuietInputMode.ToggleQuiet => _quietInput.IsQuiet ? "QUIET ACTIVE — TAP TO END" : "TAP WHEN QUIET (TOGGLE)",
+            _ => down ? "QUIET ACTIVE — RELEASE TO END" : "PRESS AND HOLD WHEN QUIET"
+        };
     }
 
     private void SearchNext()
@@ -260,6 +278,7 @@ public sealed class MainActivity : Activity
         try
         {
             _search ??= new QuietSearch(CaptureSettings(), SearchEar.Both);
+            if (_search.State == SearchState.Ready) _quietMode.Enabled = false;
             if (_search.State == SearchState.PostStimulus)
             {
                 if (QuietSearch.NowSeconds() - _lastSoundStoppedAt < 10)
@@ -267,10 +286,11 @@ public sealed class MainActivity : Activity
                 CompleteSearchTrial(false);
             }
             if (_search.State == SearchState.Finished) { _searchStatus.Text = "Search finished. Reset app to start a new search."; return; }
+            _quietInput.Reset((QuietInputMode)_quietMode.SelectedItemPosition);
             var candidate = _search.Begin(QuietSearch.NowSeconds());
             _leftHz.Text = candidate.Settings.Left.FrequencyHz.ToString("F2", CultureInfo.InvariantCulture);
             _rightHz.Text = candidate.Settings.Right.FrequencyHz.ToString("F2", CultureInfo.InvariantCulture);
-            _searchStatus.Text = $"Trial {candidate.Number} / {candidate.Stage} at {candidate.FrequencyHz:F0} Hz (fixed level). Hold QUIET on silence; release otherwise.";
+            _searchStatus.Text = $"Trial {candidate.Number} / {candidate.Stage} at {candidate.FrequencyHz:F0} Hz (fixed level). Mode: {_quietInput.Mode}. Track quiet while playing and after stopping.";
             StartPreview();
         }
         catch (Exception ex) { _searchStatus.Text = "Search error: " + ex.Message; }
@@ -279,7 +299,8 @@ public sealed class MainActivity : Activity
     private void CompleteSearchTrial(bool interrupted)
     {
         if (_search?.State is not (SearchState.Stimulating or SearchState.PostStimulus)) return;
-        QuietButton(false);
+        _search.MarkQuiet(false, QuietSearch.NowSeconds());
+        _quietInput.Cancel();
         double? after = double.TryParse(_after.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && v >= 0 && v <= 10 ? v : null;
         _search.Annotate(_voiceNote.Text, after);
         var result = _search.Finish(QuietSearch.NowSeconds(), interrupted);
@@ -288,10 +309,10 @@ public sealed class MainActivity : Activity
             result.Candidate.Stage, result.Candidate.RepeatedControl,
             result.DuringQuietSeconds.ToString("F3", CultureInfo.InvariantCulture),
             result.AfterQuietSeconds.ToString("F3", CultureInfo.InvariantCulture),
-            result.Interrupted, result.LoudnessAfter?.ToString(CultureInfo.InvariantCulture) ?? "",
+            result.Interrupted, _quietInput.Mode, result.LoudnessAfter?.ToString(CultureInfo.InvariantCulture) ?? "",
             "\"" + (result.Note ?? "").Replace("\"", "\"\"").Replace("\r", " ").Replace("\n", " ") + "\"");
         string file = Path.Combine(FilesDir!.AbsolutePath, "quiet_search.csv");
-        if (!File.Exists(file)) File.WriteAllText(file, "timestamp_utc,trial,hz,stage,control,during_quiet_s,after_quiet_s,interrupted,loudness_after,note\n");
+        if (!File.Exists(file)) File.WriteAllText(file, "timestamp_utc,trial,hz,stage,control,during_quiet_s,after_quiet_s,interrupted,input_mode,loudness_after,note\n");
         File.AppendAllText(file, line + "\n");
         _voiceNote.Text = ""; _after.Text = "";
         _searchStatus.Text = $"Trial {result.Candidate.Number} saved locally. During: {result.DuringQuietSeconds:F1}s; AFTER silence: {result.AfterQuietSeconds:F1}s.";
