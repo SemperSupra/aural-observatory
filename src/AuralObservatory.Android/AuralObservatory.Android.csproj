@@ -6,12 +6,13 @@
     <ApplicationId>org.sempersupra.auralobservatory</ApplicationId>
     <ApplicationTitle>Aural Observatory</ApplicationTitle>
     <ApplicationVersion>1</ApplicationVersion>
-    <ApplicationDisplayVersion>0.4.0</ApplicationDisplayVersion>
+    <ApplicationDisplayVersion>0.5.0</ApplicationDisplayVersion>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../AuralObservatory.Core/AuralObservatory.Core.csproj" />
+    <ProjectReference Include="../AuralObservatory.Sensors.Ble.Android/AuralObservatory.Sensors.Ble.Android.csproj" />
   </ItemGroup>
 </Project>
