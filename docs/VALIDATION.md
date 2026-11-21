@@ -12,4 +12,4 @@
 | Physical acoustic SPL | Pending |
 | Tinnitus symptom change demonstrated | No; no clinical claim |
 
-The public GitHub Actions run https://github.com/SemperSupra/aural-observatory/actions/runs/44928818567 compiled and tested the core on all three runner OSes and produced a debug-signed APK. Physical device and sound pressure validation remain pending.
+The source authoring environment lacks the SDK, but the public GitHub Actions run https://github.com/SemperSupra/aural-observatory/actions/runs/44928818567 compiled and tested the core across all three runner OSes and produced a debug-signed APK. Physical device and sound pressure validation remain pending.

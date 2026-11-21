@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <uses-sdk android:minSdkVersion="26" />
+  <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+  <!-- Android 12+: scoped BLE permission, no location inference or scanning telemetry. -->
+  <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+  <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+  <!-- Legacy Android 8–11 scanning requires location permission at OS level; never read coordinates. -->
+  <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+  <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
   <application android:label="Aural Observatory" android:usesCleartextTraffic="false" android:allowBackup="false" />
 </manifest>

@@ -10,7 +10,10 @@ using Android.OS;
 using Android.Views;
 using Android.Views.InputMethods;
 using Android.Widget;
+using Android.Content.PM;
 using AuralObservatory.Core;
+using AuralObservatory.Sensors;
+using AuralObservatory.Sensors.Ble;
 
 namespace AuralObservatoryMobile;
 
@@ -30,6 +33,13 @@ public sealed class MainActivity : Activity
     private bool _recordable;
     private string _configurationSnapshot = "";
     private readonly object _audioLock = new();
+    private readonly object _sensorLogLock = new();
+    private BleHeartRateSensor? _sensor;
+    private CancellationTokenSource? _sensorCts;
+    private bool _sensorConnecting;
+    private TextView _sensorStatus = null!;
+    private CheckBox _recordSensor = null!;
+    private readonly System.Collections.Generic.Queue<ushort> _rrWindow = new();
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -65,12 +75,19 @@ public sealed class MainActivity : Activity
 
         _play = AddButton(layout, "START 15-SECOND PREVIEW", () => StartPreview());
         AddButton(layout, "STOP", StopPreview);
+        AddText(layout, "LIVE HEART-RATE SENSOR (OPTIONAL)", 19);
+        AddText(layout, "Garmin HRM-Pro Plus / compatible BLE 0x180D strap. Live BPM and optional RR intervals. These do NOT detect tinnitus suppression. No upload or cloud connection.", 12);
+        _sensorStatus = AddText(layout, "Sensor disconnected. Wear and moisten the chest strap before connecting.", 13);
+        AddButton(layout, "CONNECT BLE HEART-RATE SENSOR", () => _ = ConnectSensorAsync());
+        AddButton(layout, "DISCONNECT SENSOR", () => _ = DisconnectSensorAsync());
+        _recordSensor = AddCheck(layout, "Record sensor readings locally ONLY while a preview plays", false);
+        AddButton(layout, "SHARE SENSOR READINGS AS CSV", ShareSensorObservations);
         AddText(layout, "SELF-OBSERVATION (0–10)", 19);
         _before = AddNumber(layout, "Tinnitus loudness BEFORE playback", "");
         _after = AddNumber(layout, "Tinnitus loudness AFTER playback", "");
         AddButton(layout, "SAVE OBSERVATION LOCALLY", SaveObservation);
         AddButton(layout, "SHARE OBSERVATIONS AS CSV", ShareObservations);
-        AddText(layout, "Ratings describe personal experience. Heart rate/HRV and EEG do not prove tinnitus suppression. No sensor or microphone is currently connected.", 12);
+        AddText(layout, "Ratings describe personal experience; heart rate and HRV do not prove tinnitus suppression. The optional BLE sensor needs explicit connection and recording consent. No microphone, location readings, or network service is used.", 12);
     }
 
     private void StartPreview()
@@ -166,8 +183,114 @@ public sealed class MainActivity : Activity
         }
     }
 
-    protected override void OnPause() { StopPreview(); base.OnPause(); }
-    protected override void OnDestroy() { StopPreview(); base.OnDestroy(); }
+    protected override void OnPause()
+    {
+        StopPreview();
+        _ = DisconnectSensorAsync(); // foreground-only capture; no silent background sampling
+        base.OnPause();
+    }
+    protected override void OnDestroy() { StopPreview(); _ = DisconnectSensorAsync(); base.OnDestroy(); }
+
+    private bool EnsureBlePermission()
+    {
+        string[] required = Build.VERSION.SdkInt >= BuildVersionCodes.S
+            ? new[] { "android.permission.BLUETOOTH_SCAN", "android.permission.BLUETOOTH_CONNECT" }
+            : new[] { Android.Manifest.Permission.AccessFineLocation! };
+        if (required.All(permission => CheckSelfPermission(permission) == Permission.Granted)) return true;
+        _sensorStatus.Text = "Android needs BLE permission to discover your strap. Approve, then tap Connect again.";
+        RequestPermissions(required, 201);
+        return false;
+    }
+
+    private async Task ConnectSensorAsync()
+    {
+        if (_sensorConnecting || _sensor is not null || !EnsureBlePermission()) return;
+        _sensorConnecting = true;
+        var sensor = new BleHeartRateSensor();
+        var cts = new CancellationTokenSource();
+        _sensorCts = cts;
+        try
+        {
+            _sensorStatus.Text = "Choose a nearby BLE heart-rate device…";
+            await sensor.ConnectAsync(cts.Token);
+            _sensor = sensor;
+            _sensorStatus.Text = "Connected: " + sensor.DeviceName + ". Waiting for heart-rate packets…";
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await foreach (var observation in sensor.ObserveAsync(cts.Token))
+                    {
+                        RunOnUiThread(() => ShowSensorObservation(observation));
+                    }
+                }
+                catch (System.OperationCanceledException) { }
+                catch (Exception ex) { RunOnUiThread(() => _sensorStatus.Text = "Sensor stream ended: " + ex.Message); }
+            });
+        }
+        catch (System.OperationCanceledException) { _sensorStatus.Text = "Sensor selection cancelled."; await sensor.DisposeAsync(); }
+        catch (Exception ex) { _sensorStatus.Text = "BLE connection failed: " + ex.Message; await sensor.DisposeAsync(); }
+        finally
+        {
+            if (_sensor is null)
+            {
+                if (ReferenceEquals(_sensorCts, cts)) _sensorCts = null;
+                cts.Dispose();
+            }
+            _sensorConnecting = false;
+        }
+    }
+
+    private void ShowSensorObservation(HeartRateObservation observation)
+    {
+        var m = observation.Measurement;
+        foreach (ushort ticks in m.RrTicks1024)
+        {
+            _rrWindow.Enqueue(ticks);
+            if (_rrWindow.Count > 600) _rrWindow.Dequeue();
+        }
+        var analysis = RrMetrics.CalculateRmssd(_rrWindow);
+        string hrv = analysis.RmssdMs is double v ? $"{v:F1} ms (exploratory)" : "insufficient clean beats";
+        _sensorStatus.Text = $"{observation.DeviceName}: {m.BeatsPerMinute} BPM | RR: {(m.HasRr ? string.Join("/", m.RrMilliseconds.Select(x => x.ToString("F0"))) + " ms" : "not provided")} | RMSSD: {hrv} | contact: {m.Contact}";
+        if (!_recordSensor.Checked || _cancellation is null) return;
+        string path = Path.Combine(FilesDir!.AbsolutePath, "ble_sensor_samples.csv");
+        string rr = string.Join(";", m.RrMilliseconds.Select(x => x.ToString("F3", CultureInfo.InvariantCulture)));
+        string line = string.Join(",", observation.ReceivedAtUtc.ToString("O"),
+            observation.HostMonotonicSeconds.ToString("F6", CultureInfo.InvariantCulture),
+            observation.Sequence, m.BeatsPerMinute, m.Contact, rr, m.HasRr, observation.DroppedNotifications);
+        _ = Task.Run(() =>
+        {
+            lock (_sensorLogLock)
+            {
+                if (!File.Exists(path)) File.WriteAllText(path, "received_utc,host_monotonic_s,sequence,bpm,contact,rr_ms,has_rr,dropped_notifications\n");
+                File.AppendAllText(path, line + "\n");
+            }
+        });
+    }
+
+    private async Task DisconnectSensorAsync()
+    {
+        _sensorCts?.Cancel();
+        var sensor = _sensor;
+        _sensor = null;
+        _sensorCts = null;
+        _rrWindow.Clear();
+        if (sensor is not null)
+        {
+            try { await sensor.DisposeAsync(); } catch { /* already disconnected */ }
+        }
+        if (!IsFinishing && _sensorStatus is not null) _sensorStatus.Text = "Sensor disconnected.";
+    }
+
+    private void ShareSensorObservations()
+    {
+        string path = Path.Combine(FilesDir!.AbsolutePath, "ble_sensor_samples.csv");
+        if (!File.Exists(path)) { _sensorStatus.Text = "No sensor recordings yet. Enable opt-in recording during a preview."; return; }
+        var intent = new Intent(Intent.ActionSend);
+        intent.SetType("text/csv");
+        intent.PutExtra(Intent.ExtraText, File.ReadAllText(path));
+        StartActivity(Intent.CreateChooser(intent, "Export local HR and RR observations"));
+    }
 
     private StimulusSettings CaptureSettings()
     {
