@@ -23,8 +23,8 @@ Reproducible ear-specific acoustic experimentation with local-first outcomes, an
 Playback `idle → configured → playing → finished/stopped/error`; lifecycle pause interrupts playback. Outcome `unrated → baseline-rated → session-completed → post-rated → persisted/exported`; saving requires a completed preview. Sensor future `disconnected → discovering → consent → connected → recording → disconnected/error`.
 
 ## Gates
-- G0 source review and static checks: IN PROGRESS.
-- G1 native Android + three-platform core compile/test: PENDING CI.
+- G0 source review and static checks: PASS for source and XML; acoustic/clinical claims excluded.
+- G1 native Android + three-platform core compile/test: PASS — GitHub Actions run 44928818567; debug APK only.
 - G2 acoustic fixtures and physical headphone measurements: PENDING.
 - G3 physical device smoke and USB/Bluetooth audio routing: PENDING.
 - G4 BLE H10 RR/ECG acquisition and clock-quality tests: FUTURE.
