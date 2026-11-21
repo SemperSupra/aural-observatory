@@ -46,3 +46,10 @@ Reviewed actual `MainActivity.cs`, SearchDesktop `wwwroot/index.html`, local ser
 
 ## Definition of done
 A release candidate requires platform-native design checklists; annotated screen recordings or accessible testing results; finite test plans and defect ledger; physical acoustic/latency qualification; profile upgrade restore tests; signed release and reproducible provenance; no uncontrolled health-data telemetry.
+
+## Second-pass desktop source audit / corrections
+- **Fixed in R8-B source:** Space keyboard shortcut ignored focused native button, input, select, textarea, links and ARIA interactive roles, preserving browser control activation. See `tests/ui_static_check.js` for static guard; actual keyboard test remains open.
+- **Critical missing feature:** Desktop HTML has no two-ear audio editor; `/api/preset` persists `LastStimulus`, which users currently cannot edit from that page. Implement typed/config-validated form, separate explored/default experiment state, and ensure export contains correct settings.
+- **Desktop installer/shell:** Windows NSIS provides a shortcut and local app installation but actual foreground browser window launch, single-instance, clean exit/service teardown and crash handling are not verified. macOS/Linux currently ship archives, not OS-native application bundles.
+- **DX:** Pure C# DSP/protocol schemas are sound foundations, but there is no stable plugin/CLI specification or source-described per-platform API discoverability. Preserve human approval for audio/sensor actions and add synthetic developer samples/fixtures.
+- Required follow-up tracked as https://github.com/SemperSupra/aural-observatory/issues/12. Desktop CI build/static checks do not assert native OS or WCAG compliance.
