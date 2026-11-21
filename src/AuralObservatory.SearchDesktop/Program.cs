@@ -1,4 +1,7 @@
 using AuralObservatory.Core;
+using AuralObservatory.SearchDesktop;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using System.Text;
 using System.Text.Json;
 using System.Globalization;
@@ -7,18 +10,31 @@ using System.Net;
 
 // Local-only browser frontend, with native C# DSP. No browser-side sound synthesis or Internet access.
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls("http://127.0.0.1:8766");
+builder.WebHost.UseUrls("http://127.0.0.1:0"); // OS-selected ephemeral port; bound to local loopback only.
 var app = builder.Build();
 var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 var gate = new object();
-var original = new StimulusSettings(new EarProfile(4000, 0.6, 1.0), new EarProfile(4000, 0.6, 1.0));
-var search = new QuietSearch(original);
+var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AuralObservatory");
+Directory.CreateDirectory(dataDir);
+using var desktopSession = DesktopSession.TryAcquire(dataDir);
+if(desktopSession is null)
+{
+    Console.Error.WriteLine("An Aural Observatory desktop session is already running for this OS user.");
+    return; // Never bind a competing session or overwrite user preferences.
+}
+var preferencesPath = Path.Combine(dataDir, "preferences-v1.json");
+UserPreferences preferences;
+try { preferences = UserPreferencesStore.ReadFile(preferencesPath); }
+catch (Exception ex) {
+    // Fail visibly, preserve invalid or future-version document; do NOT erase evidence.
+    Console.Error.WriteLine("Preferences unreadable (left unchanged): " + ex.Message);
+    preferences = UserPreferences.Default;
+}
+var search = new QuietSearch(preferences.LastStimulus);
 var audio = Array.Empty<byte>();
 var lastStopped = 0d;
 var currentAudioId = 0;
-var currentInputMode = QuietInputMode.HoldWhenQuiet;
-var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AuralObservatory");
-Directory.CreateDirectory(dataDir);
+var currentInputMode = preferences.ResponseMode;
 var logPath = Path.Combine(dataDir, "quiet_search_r7.csv");
 app.Use(async (ctx, next) =>
 {
@@ -33,6 +49,70 @@ app.MapGet("/", () =>
     var html = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "wwwroot", "index.html"))
         .Replace("__SESSION_TOKEN__", token, StringComparison.Ordinal);
     return Results.Content(html, "text/html; charset=utf-8");
+});
+app.MapGet("/api/preferences", () =>
+{
+    lock(gate) return Results.Json(preferences);
+});
+app.MapPost("/api/preferences", (UserPreferences input) =>
+{
+    lock(gate) {
+        if(search.State is SearchState.Stimulating or SearchState.PostStimulus)
+            return Results.Conflict(new { error = "Stop the active trial before changing preferences" });
+        try {
+            UserPreferencesStore.WriteFile(preferencesPath, input);
+            preferences = input;
+            if(search.State == SearchState.Ready && !search.Results.Any()) search = new QuietSearch(input.LastStimulus);
+            return Results.Ok(new { saved = true, appliesToNewSearch = true });
+        }
+        catch(Exception ex) when(ex is ArgumentException or NotSupportedException or FormatException)
+        { return Results.BadRequest(new { error=ex.Message }); }
+    }
+});
+app.MapPost("/api/preset", (PresetInput input) =>
+{
+    lock(gate) {
+        if(search.State is SearchState.Stimulating or SearchState.PostStimulus)
+            return Results.Conflict(new { error = "Finish the trial before saving a preset" });
+        try {
+            var next = UserPreferencesStore.SavePreset(preferences,input.Name,DateTimeOffset.UtcNow);
+            UserPreferencesStore.WriteFile(preferencesPath,next);
+            preferences=next;
+            return Results.Json(next.Presets.Select(p=>new {p.Name,p.CreatedUtc}));
+        }
+        catch(Exception ex) when(ex is ArgumentException or InvalidOperationException or FormatException)
+        {return Results.BadRequest(new {error=ex.Message});}
+    }
+});
+app.MapPost("/api/preset/load", (PresetInput input) =>
+{
+    lock(gate) {
+        if(search.State is SearchState.Stimulating or SearchState.PostStimulus)
+            return Results.Conflict(new { error = "Finish the current trial first" });
+        var match=preferences.Presets.FirstOrDefault(p=>string.Equals(p.Name,input.Name,StringComparison.OrdinalIgnoreCase));
+        if(match is null) return Results.NotFound(new { error = "Preset not found" });
+        var next=preferences with { LastStimulus = match.Stimulus };
+        UserPreferencesStore.WriteFile(preferencesPath,next);
+        preferences=next;
+        if(search.State==SearchState.Ready && !search.Results.Any()) search=new QuietSearch(next.LastStimulus);
+        return Results.Ok(new { loaded=true, requiresFreshSearch = search.Results.Any() });
+    }
+});
+app.MapPost("/api/reset", () =>
+{
+    lock(gate) {
+        if(search.State is SearchState.Stimulating or SearchState.PostStimulus)
+            return Results.Conflict(new { error = "Finish or stop the active trial before restarting" });
+        search = new QuietSearch(preferences.LastStimulus);
+        audio=Array.Empty<byte>(); currentAudioId++;
+        return Results.Ok(new {ready=true, priorObservationsRetained=true});
+    }
+});
+app.MapPost("/api/exit", () =>
+{
+    // Only a token-authorized local page can reach this endpoint.
+    app.Lifetime.StopApplication();
+    return Results.Ok(new { stopping=true });
 });
 app.MapPost("/api/next", (ModeInput input) =>
 {
@@ -89,9 +169,18 @@ app.MapGet("/api/export", () =>
 {
     lock (gate) return Results.Text(File.Exists(logPath) ? File.ReadAllText(logPath) : "No observations yet", "text/plain");
 });
-Console.WriteLine("Aural Observatory local search: http://127.0.0.1:8766");
-Console.WriteLine("Local data directory: " + dataDir);
-await app.RunAsync();
+await app.StartAsync();
+var addresses=app.Services.GetRequiredService<IServer>().Features
+    .Get<IServerAddressesFeature>()?.Addresses;
+var assigned=addresses?.FirstOrDefault(a=>a.StartsWith("http://127.0.0.1:",StringComparison.Ordinal));
+if(assigned is null || !Uri.TryCreate(assigned,UriKind.Absolute,out var boundUrl) || boundUrl.Port==0)
+    throw new InvalidOperationException("Kestrel did not provide the actual loopback address.");
+Console.WriteLine("Aural Observatory local session: " + boundUrl.AbsoluteUri);
+Console.WriteLine("Local user data: " + dataDir);
+if(DesktopSession.ShouldLaunchBrowser(args,Environment.GetEnvironmentVariable))
+    DesktopSession.TryLaunchBrowser(boundUrl,Console.WriteLine);
+else Console.WriteLine("Browser launch disabled/unavailable; open the URL above manually.");
+await app.WaitForShutdownAsync();
 
 void Store(SearchResult result)
 {
@@ -132,6 +221,7 @@ static byte[] MakeWave(StimulusSettings settings)
     }
     return memory.ToArray();
 }
+record PresetInput(string Name);
 record ModeInput(string Mode);
 record HoldInput(bool Down);
 record Annotation(string? Note, double? LoudnessAfter);

@@ -1,0 +1,52 @@
+name: R8 accessible UI and preferences qualification
+on:
+  pull_request:
+    paths:
+      - 'src/AuralObservatory.Core/**'
+      - 'src/AuralObservatory.Android/**'
+      - 'src/AuralObservatory.SearchDesktop/**'
+      - 'tests/AuralObservatory.Preferences.Tests/**'
+      - '.github/workflows/ui-preferences.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-26]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet run --project tests/AuralObservatory.Preferences.Tests/AuralObservatory.Preferences.Tests.csproj -c Release
+      - run: dotnet build src/AuralObservatory.SearchDesktop/AuralObservatory.SearchDesktop.csproj -c Release
+      - name: Check static semantic UI and keyboard contracts
+        run: node tests/ui_static_check.js
+      - name: Parse actual desktop inline JavaScript
+        shell: bash
+        run: |
+          node -e "const fs=require('fs'),vm=require('vm');const t=fs.readFileSync('src/AuralObservatory.SearchDesktop/wwwroot/index.html','utf8');const begin=t.indexOf('<script>');const end=t.indexOf('</script>',begin);if(begin<0||end<0)process.exit(3);new vm.Script(t.slice(begin+8,end));console.log('PASS: desktop inline JavaScript syntax');"
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
+        with:
+          dotnet-version: 10.0.x
+      - name: Android SDK platform
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER=$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools" -name sdkmanager -type f | head -n 1)
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0"
+      - run: dotnet workload install android
+      - run: dotnet build src/AuralObservatory.Android/AuralObservatory.Android.csproj -c Debug

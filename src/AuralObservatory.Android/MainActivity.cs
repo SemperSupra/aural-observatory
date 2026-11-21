@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Android.App;
@@ -11,6 +12,11 @@ using Android.OS;
 using Android.Views;
 using Android.Views.InputMethods;
 using Android.Widget;
+using Android.Graphics;
+using Path = System.IO.Path;
+using Android.Content.Res;
+using Android.Util;
+using System.Collections.Generic;
 using Android.Content.PM;
 using AuralObservatory.Core;
 using AuralObservatory.Sensors;
@@ -48,13 +54,26 @@ public sealed class MainActivity : Activity
     private Spinner _quietMode = null!;
     private readonly QuietInputController _quietInput = new();
     private double _lastSoundStoppedAt;
+    private UserPreferences _preferences = UserPreferences.Default;
+    private string _preferencesPath = "";
+    private LinearLayout _rootPanel = null!;
+    private Spinner _appearanceChoice = null!, _fontChoice = null!, _sizeChoice = null!, _presetChoice = null!;
+    private CheckBox _contrastChoice = null!, _motionChoice = null!;
+    private EditText _presetName = null!;
+    private readonly Dictionary<TextView,float> _baseTextSizes = new();
+
 
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
+        _preferencesPath = Path.Combine(FilesDir!.AbsolutePath, "preferences-v1.json");
+        string? preferenceError = null;
+        try { _preferences = UserPreferencesStore.ReadFile(_preferencesPath); }
+        catch(Exception ex) { preferenceError = ex.Message; } // Leave invalid/future preferences intact; never erase silently.
         var outer = new ScrollView(this) { FillViewport = true };
         var layout = new LinearLayout(this) { Orientation = Android.Widget.Orientation.Vertical };
+        _rootPanel = layout;
         layout.SetPadding(32, 28, 32, 36);
         outer.AddView(layout);
         SetContentView(outer);
@@ -63,46 +82,75 @@ public sealed class MainActivity : Activity
         AddText(layout, "EXPERIMENTAL · Not a medical device · No demonstrated tinnitus treatment efficacy.", 12);
         AddText(layout, "Use comfortable volume. Output is digitally attenuated but NOT sound-pressure calibrated. Stop if uncomfortable. Headphones recommended; never increase volume to compensate for poor audibility.", 12);
 
-        AddText(layout, "LEFT EAR", 19);
-        _leftHz = AddNumber(layout, "Pitch / notch center (Hz)", "4000");
-        _leftGain = AddNumber(layout, "Gain fraction 0–1", "0.6");
-        _leftWidth = AddNumber(layout, "Notch width (octaves)", "1.0");
-        _leftNoise = AddNoisePicker(layout);
-        _leftNotch = AddCheck(layout, "Enable notch", true);
+        var appearancePanel = AddExpandableSection(layout,"Appearance and accessibility",false);
+        _appearanceChoice = AddChoice(appearancePanel,"Appearance",new[]{"System","Light","Dark"},(int)_preferences.Appearance);
+        _fontChoice = AddChoice(appearancePanel,"Font family",new[]{"System","Sans serif","Serif","Monospace"},(int)_preferences.FontFamily);
+        _sizeChoice = AddChoice(appearancePanel,"Text scale",new[]{"80%","100%","125%","150%","200%"},
+            _preferences.FontScalePercent switch{80=>0,100=>1,125=>2,150=>3,200=>4,_=>1});
+        _contrastChoice = AddCheck(appearancePanel,"High contrast",_preferences.HighContrast);
+        _motionChoice = AddCheck(appearancePanel,"Reduce motion",_preferences.ReduceMotion);
+        AddButton(appearancePanel,"SAVE APPEARANCE AND AUDIO SETTINGS",SavePreferences);
+        _presetName = new EditText(this){Hint="New preset name (up to 64 characters)"};
 
-        AddText(layout, "RIGHT EAR", 19);
-        _rightHz = AddNumber(layout, "Pitch / notch center (Hz)", "6000");
-        _rightGain = AddNumber(layout, "Gain fraction 0–1", "0.6");
-        _rightWidth = AddNumber(layout, "Notch width (octaves)", "1.0");
-        _rightNoise = AddNoisePicker(layout);
-        _rightNotch = AddCheck(layout, "Enable notch", true);
+        appearancePanel.AddView(_presetName);
+        AddButton(appearancePanel,"SAVE NAMED AUDIO PRESET",SaveNamedPreset);
+        _presetChoice = AddChoice(appearancePanel,"Saved audio presets",new[]{"None saved"},0);
+        AddButton(appearancePanel,"LOAD SELECTED PRESET",LoadSelectedPreset);
+        AddButton(appearancePanel,"EXPORT SETTINGS / PRESETS AS JSON",ExportPreferences);
+        AddButton(appearancePanel,"IMPORT SETTINGS / PRESETS FROM JSON",ImportPreferences);
+        AddText(appearancePanel,"User data survives normal installed upgrades but may be removed by uninstall or debug-signature changes. Export before replacing development builds.",12);
+        if (preferenceError != null) AddText(appearancePanel,
+            "Saved preferences could not be read and were preserved: "+preferenceError,12);
+        var soundPanel = AddExpandableSection(layout,"Sound configuration and preview",true);
+        AddText(soundPanel, "LEFT EAR", 19);
+        _leftHz = AddNumber(soundPanel, "Pitch / notch center (Hz)", "4000");
+        _leftGain = AddNumber(soundPanel, "Gain fraction 0–1", "0.6");
+        _leftWidth = AddNumber(soundPanel, "Notch width (octaves)", "1.0");
+        _leftNoise = AddNoisePicker(soundPanel);
+        _leftNotch = AddCheck(soundPanel, "Enable notch", true);
 
-        AddText(layout, "TEMPORAL MODULATION", 19);
-        _amHz = AddNumber(layout, "Amplitude modulation (Hz; 0–20)", "0");
-        _amDepth = AddNumber(layout, "Modulation depth (0–0.9)", "0");
-        _status = AddText(layout, "Idle. Audio plays only after pressing Start.", 13);
+        AddText(soundPanel, "RIGHT EAR", 19);
+        _rightHz = AddNumber(soundPanel, "Pitch / notch center (Hz)", "6000");
+        _rightGain = AddNumber(soundPanel, "Gain fraction 0–1", "0.6");
+        _rightWidth = AddNumber(soundPanel, "Notch width (octaves)", "1.0");
+        _rightNoise = AddNoisePicker(soundPanel);
+        _rightNotch = AddCheck(soundPanel, "Enable notch", true);
 
-        _play = AddButton(layout, "START 15-SECOND PREVIEW", () => StartPreview());
-        AddButton(layout, "STOP", StopPreview);
-        AddText(layout, "LIVE HEART-RATE SENSOR (OPTIONAL)", 19);
-        AddText(layout, "Garmin HRM-Pro Plus / compatible BLE 0x180D strap. Live BPM and optional RR intervals. These do NOT detect tinnitus suppression. No upload or cloud connection.", 12);
-        _sensorStatus = AddText(layout, "Sensor disconnected. Wear and moisten the chest strap before connecting.", 13);
-        AddButton(layout, "CONNECT BLE HEART-RATE SENSOR", () => _ = ConnectSensorAsync());
-        AddButton(layout, "DISCONNECT SENSOR", () => _ = DisconnectSensorAsync());
-        _recordSensor = AddCheck(layout, "Record sensor readings locally ONLY while a preview plays", false);
-        AddButton(layout, "SHARE SENSOR READINGS AS CSV", ShareSensorObservations);
-        AddText(layout, "QUIET SEARCH (EXPERIMENTAL)", 19);
-        AddText(layout, "Randomized fixed-level frequency trials. Hold QUIET only while tinnitus SEEMS absent. During sound = masking; after sound = possible residual inhibition. Never increases volume. Not evidence of efficacy.", 12);
-        AddText(layout, "Response style (choose before starting search)", 13);
+        AddText(soundPanel, "TEMPORAL MODULATION", 19);
+        _amHz = AddNumber(soundPanel, "Amplitude modulation (Hz; 0–20)", "0");
+        _amDepth = AddNumber(soundPanel, "Modulation depth (0–0.9)", "0");
+        _status = AddText(soundPanel, "Idle. Audio plays only after pressing Start.", 13);
+        _status.AccessibilityLiveRegion = AccessibilityLiveRegion.Polite;
+
+        _play = AddButton(soundPanel, "START 15-SECOND PREVIEW", () => StartPreview());
+        AddButton(soundPanel, "STOP", StopPreview);
+        var sensorPanel = AddExpandableSection(layout,"Sensors and BLE measurements",false);
+        AddText(sensorPanel, "LIVE HEART-RATE SENSOR (OPTIONAL)", 19);
+        AddText(sensorPanel, "Garmin HRM-Pro Plus / compatible BLE 0x180D strap. Live BPM and optional RR intervals. These do NOT detect tinnitus suppression. No upload or cloud connection.", 12);
+        _sensorStatus = AddText(sensorPanel, "Sensor disconnected. Wear and moisten the chest strap before connecting.", 13);
+        _sensorStatus.AccessibilityLiveRegion = AccessibilityLiveRegion.Polite;
+        AddButton(sensorPanel, "CONNECT BLE HEART-RATE SENSOR", () => _ = ConnectSensorAsync());
+        AddButton(sensorPanel, "DISCONNECT SENSOR", () => _ = DisconnectSensorAsync());
+        _recordSensor = AddCheck(sensorPanel, "Record sensor readings locally ONLY while a preview plays", false);
+        AddButton(sensorPanel, "SHARE SENSOR READINGS AS CSV", ShareSensorObservations);
+        var searchPanel = AddExpandableSection(layout,"Quiet search and response",true);
+        AddText(searchPanel, "QUIET SEARCH (EXPERIMENTAL)", 19);
+        AddText(searchPanel, "Randomized fixed-level frequency trials. Hold QUIET only while tinnitus SEEMS absent. During sound = masking; after sound = possible residual inhibition. Never increases volume. Not evidence of efficacy.", 12);
+        AddText(searchPanel, "Response style (choose before starting search)", 13);
         _quietMode = new Spinner(this);
         var modeAdapter = new ArrayAdapter<string>(this, Android.Resource.Layout.SimpleSpinnerItem,
             new[] { "Hold when quiet", "Hold while audible; RELEASE when quiet", "Tap to toggle quiet" });
         modeAdapter.SetDropDownViewResource(Android.Resource.Layout.SimpleSpinnerDropDownItem);
         _quietMode.Adapter = modeAdapter;
-        layout.AddView(_quietMode);
-        _searchStatus = AddText(layout, "No search started. Each candidate plays for 15 seconds; mark quiet during and after sound.", 13);
-        AddButton(layout, "START / NEXT SEARCH TRIAL", SearchNext);
-        _quietHold = AddButton(layout, "PRESS AND HOLD WHEN QUIET", () => { });
+        searchPanel.AddView(_quietMode);
+        _searchStatus = AddText(searchPanel, "No search started. Each candidate plays for 15 seconds; mark quiet during and after sound.", 13);
+        _searchStatus.AccessibilityLiveRegion = AccessibilityLiveRegion.Polite;
+        AddButton(searchPanel, "START / NEXT SEARCH TRIAL", SearchNext);
+        _quietHold = AddButton(searchPanel, "PRESS AND HOLD WHEN QUIET", () => {
+            // TalkBack/Switch Access expose click actions rather than raw pointer presses.
+            if (_quietInput.Mode == QuietInputMode.ToggleQuiet) { QuietButton(true); QuietButton(false); }
+            else QuietButton(!_quietInput.IsPressed);
+        });
         _quietHold.Touch += (_, e) =>
         {
             if (e.Event is null) return;
@@ -113,16 +161,22 @@ public sealed class MainActivity : Activity
             { if (_search?.State is SearchState.Stimulating or SearchState.PostStimulus) _search.MarkQuiet(false, QuietSearch.NowSeconds()); _quietInput.Cancel(); e.Handled = true; }
         };
         _voiceNote = new EditText(this) { Hint = "Optional note, or dictate after playback" };
-        layout.AddView(_voiceNote);
-        AddButton(layout, "DICTATE OPTIONAL NOTE (SYSTEM SPEECH)", DictateNote);
-        AddButton(layout, "END SEARCH / SAVE CURRENT TRIAL", EndSearch);
-        AddText(layout, "Voice transcription is provided by the installed Android speech service and may use the network. It is opt-in and disabled during playback. No voice-controlled gain or treatment changes.", 12);
-        AddText(layout, "SELF-OBSERVATION (0–10)", 19);
-        _before = AddNumber(layout, "Tinnitus loudness BEFORE playback", "");
-        _after = AddNumber(layout, "Tinnitus loudness AFTER playback", "");
-        AddButton(layout, "SAVE OBSERVATION LOCALLY", SaveObservation);
-        AddButton(layout, "SHARE OBSERVATIONS AS CSV", ShareObservations);
-        AddText(layout, "Ratings describe personal experience; heart rate and HRV do not prove tinnitus suppression. The optional BLE sensor needs explicit connection and recording consent. No microphone, location readings, or network service is used.", 12);
+        searchPanel.AddView(_voiceNote);
+        AddButton(searchPanel, "DICTATE OPTIONAL NOTE (SYSTEM SPEECH)", DictateNote);
+        AddButton(searchPanel, "END SEARCH / SAVE CURRENT TRIAL", EndSearch);
+        AddButton(searchPanel, "NEW SEARCH (KEEP SAVED RESULTS)", ResetSearch);
+        AddText(searchPanel, "Voice transcription is provided by the installed Android speech service and may use the network. It is opt-in and disabled during playback. No voice-controlled gain or treatment changes.", 12);
+        var observationPanel = AddExpandableSection(layout,"Observations and export",false);
+        AddText(observationPanel, "SELF-OBSERVATION (0–10)", 19);
+        _before = AddNumber(observationPanel, "Tinnitus loudness BEFORE playback", "");
+        _after = AddNumber(observationPanel, "Tinnitus loudness AFTER playback", "");
+        AddButton(observationPanel, "SAVE OBSERVATION LOCALLY", SaveObservation);
+        AddButton(observationPanel, "SHARE OBSERVATIONS AS CSV", ShareObservations);
+        AddText(observationPanel, "Ratings describe personal experience; heart rate and HRV do not prove tinnitus suppression. The optional BLE sensor needs explicit connection and recording consent. No microphone, location readings, or network service is used.", 12);
+        ApplyStimulusToFields(_preferences.LastStimulus);
+        _quietMode.SetSelection((int)_preferences.ResponseMode);
+        RefreshPresetChoices();
+        ApplyAppearance();
     }
 
     private void StartPreview()
@@ -325,6 +379,18 @@ public sealed class MainActivity : Activity
         if (_search?.State == SearchState.PostStimulus) CompleteSearchTrial(false);
         else _searchStatus.Text = "No completed search trial to save.";
     }
+    private void ResetSearch()
+    {
+        if (_cancellation is not null || _search?.State is SearchState.Stimulating or SearchState.PostStimulus)
+        { _searchStatus.Text="Stop/finish the current audio and post-stimulus interval first."; return; }
+        try {
+            _search = new QuietSearch(CaptureSettings(), SearchEar.Both);
+            _quietInput.Cancel();
+            _quietMode.Enabled = true;
+            _searchStatus.Text="New randomized frequency search ready; prior results remain in your user-data journal.";
+        }catch(Exception ex){_searchStatus.Text="Cannot reset: "+ex.Message;}
+    }
+
     private void DictateNote()
     {
         if (_cancellation is not null) { _searchStatus.Text = "Stop playback before using speech recognition."; return; }
@@ -341,6 +407,7 @@ public sealed class MainActivity : Activity
     protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
     {
         base.OnActivityResult(requestCode, resultCode, data);
+        if (requestCode is 471 or 472) { HandlePreferencesDocument(requestCode, resultCode, data); return; }
         if (requestCode != 470 || resultCode != Result.Ok || data is null) return;
         var phrases = data.GetStringArrayListExtra(RecognizerIntent.ExtraResults);
         if (phrases is { Count: > 0 }) _voiceNote.Text = phrases[0];
@@ -486,18 +553,218 @@ public sealed class MainActivity : Activity
         StartActivity(Intent.CreateChooser(intent, "Export observations"));
     }
 
+    private LinearLayout AddExpandableSection(LinearLayout parent,string title,bool expanded)
+    {
+        var section = new LinearLayout(this) { Orientation = Android.Widget.Orientation.Vertical };
+        Button? button = null;
+        button = AddButton(parent,title + (expanded ? " (collapse)" : " (expand)"),()=> {
+            bool open = section.Visibility == ViewStates.Gone;
+            section.Visibility = open ? ViewStates.Visible : ViewStates.Gone;
+            button!.Text = title + (open ? " (collapse)" : " (expand)");
+            button.ContentDescription = button.Text;
+        });
+        button.ContentDescription = button.Text;
+        parent.AddView(section);
+        section.Visibility = expanded ? ViewStates.Visible : ViewStates.Gone;
+        return section;
+    }
+    private Spinner AddChoice(LinearLayout parent,string label,string[] options,int selected)
+    {
+        AddText(parent,label,14);
+        var spinner=new Spinner(this);
+        var adapter=new ArrayAdapter<string>(this,Android.Resource.Layout.SimpleSpinnerItem,options);
+        adapter.SetDropDownViewResource(Android.Resource.Layout.SimpleSpinnerDropDownItem);
+        spinner.Adapter=adapter;
+        spinner.SetSelection(Math.Clamp(selected,0,options.Length-1));
+        spinner.ContentDescription=label;
+        parent.AddView(spinner);
+        return spinner;
+    }
+    private void ApplyStimulusToFields(StimulusSettings s)
+    {
+        _leftHz.Text=s.Left.FrequencyHz.ToString(CultureInfo.InvariantCulture);
+        _rightHz.Text=s.Right.FrequencyHz.ToString(CultureInfo.InvariantCulture);
+        _leftGain.Text=s.Left.Gain.ToString(CultureInfo.InvariantCulture);
+        _rightGain.Text=s.Right.Gain.ToString(CultureInfo.InvariantCulture);
+        _leftWidth.Text=s.Left.NotchWidthOctaves.ToString(CultureInfo.InvariantCulture);
+        _rightWidth.Text=s.Right.NotchWidthOctaves.ToString(CultureInfo.InvariantCulture);
+        _leftNoise.SetSelection((int)s.Left.Colour);
+        _rightNoise.SetSelection((int)s.Right.Colour);
+        _leftNotch.Checked=s.Left.NotchEnabled;
+        _rightNotch.Checked=s.Right.NotchEnabled;
+        _amHz.Text=s.ModulationHz.ToString(CultureInfo.InvariantCulture);
+        _amDepth.Text=s.ModulationDepth.ToString(CultureInfo.InvariantCulture);
+    }
+    private void RefreshPresetChoices()
+    {
+        var labels=new List<string>{"Select a saved preset"};
+        labels.AddRange(_preferences.Presets.Select(p=>p.Name));
+        var adapter=new ArrayAdapter<string>(this,Android.Resource.Layout.SimpleSpinnerItem,labels);
+        adapter.SetDropDownViewResource(Android.Resource.Layout.SimpleSpinnerDropDownItem);
+        _presetChoice.Adapter=adapter;
+    }
+    private bool CanChangeProfile()
+    {
+        if(_cancellation is null && _search?.State is not (SearchState.Stimulating or SearchState.PostStimulus)) return true;
+        _status.Text="Finish/stop the current experiment before changing appearance or presets.";
+        return false;
+    }
+    private void ExportPreferences()
+    {
+        if(!CanChangeProfile())return;
+        try {
+            // A user-chosen Storage Access Framework document, no broad file permission.
+            var intent=new Intent(Intent.ActionCreateDocument);
+            intent.AddCategory(Intent.CategoryOpenable);
+            intent.SetType("application/json");
+            intent.PutExtra(Intent.ExtraTitle,"aural-observatory-preferences-v1.json");
+            StartActivityForResult(intent,472);
+        }catch(Exception ex){_status.Text="Settings export failed: "+ex.Message;}
+    }
+    private void ImportPreferences()
+    {
+        if(!CanChangeProfile())return;
+        try{
+            var intent=new Intent(Intent.ActionOpenDocument);
+            intent.AddCategory(Intent.CategoryOpenable);
+            intent.SetType("application/json");
+            StartActivityForResult(intent,471);
+        }catch(Exception ex){_status.Text="Settings import failed: "+ex.Message;}
+    }
+    private void HandlePreferencesDocument(int requestCode,Result resultCode,Intent? data)
+    {
+        if(resultCode!=Result.Ok || data?.Data is null)return;
+        if(!CanChangeProfile())return;
+        try{
+            using var stream=(requestCode==471
+                ? ContentResolver!.OpenInputStream(data.Data)
+                : ContentResolver!.OpenOutputStream(data.Data))
+                ?? throw new IOException("Document stream unavailable");
+            if(requestCode==471){
+                using var reader=new StreamReader(stream,System.Text.Encoding.UTF8);
+                var buffer=new char[65537];
+                int count=reader.ReadBlock(buffer,0,buffer.Length);
+                if(count>=buffer.Length)throw new IOException("Preferences JSON exceeds 64 KiB");
+                var incoming=UserPreferencesStore.FromJson(new string(buffer,0,count));
+                // No app settings changed until the entire document validates.
+                UserPreferencesStore.WriteFile(_preferencesPath,incoming);
+                _preferences=incoming;
+                ApplyStimulusToFields(incoming.LastStimulus);
+                _quietMode.SetSelection((int)incoming.ResponseMode);
+                _appearanceChoice.SetSelection((int)incoming.Appearance);
+                _fontChoice.SetSelection((int)incoming.FontFamily);
+                int index=Array.IndexOf(new[]{80,100,125,150,200},incoming.FontScalePercent);
+                _sizeChoice.SetSelection(index<0?1:index);
+                _contrastChoice.Checked=incoming.HighContrast;
+                _motionChoice.Checked=incoming.ReduceMotion;
+                RefreshPresetChoices();
+                ApplyAppearance();
+                _status.Text="Preferences imported after schema validation; previous data preserved until import completed.";
+            } else {
+                var bytes=System.Text.Encoding.UTF8.GetBytes(UserPreferencesStore.ToJson(_preferences));
+                stream.Write(bytes,0,bytes.Length);
+                stream.Flush();
+                _status.Text="Settings/presets exported to the location you selected.";
+            }
+        }catch(Exception ex){_status.Text="Settings document operation failed: "+ex.Message;}
+    }
+
+    private void SavePreferences()
+    {
+        if(!CanChangeProfile())return;
+        try{
+            var scales=new[]{80,100,125,150,200};
+            var next=_preferences with {
+                Appearance=(AppearanceMode)_appearanceChoice.SelectedItemPosition,
+                FontFamily=(FontFamilyChoice)_fontChoice.SelectedItemPosition,
+                FontScalePercent=scales[_sizeChoice.SelectedItemPosition],
+                HighContrast=_contrastChoice.Checked,
+                ReduceMotion=_motionChoice.Checked,
+                ResponseMode=(QuietInputMode)_quietMode.SelectedItemPosition,
+                LastStimulus=CaptureSettings()
+            };
+            UserPreferencesStore.WriteFile(_preferencesPath,next);
+            _preferences=next;
+            ApplyAppearance();
+            _status.Text="Settings saved to local user profile, separate from application binaries.";
+        }catch(Exception ex){_status.Text="Settings not saved: "+ex.Message;}
+    }
+    private void SaveNamedPreset()
+    {
+        if(!CanChangeProfile())return;
+        try{
+            var next=_preferences with {LastStimulus=CaptureSettings()};
+            next=UserPreferencesStore.SavePreset(next,_presetName.Text??"",DateTimeOffset.UtcNow);
+            UserPreferencesStore.WriteFile(_preferencesPath,next);
+            _preferences=next;
+            RefreshPresetChoices();
+            _status.Text="Named audio preset saved locally.";
+        }catch(Exception ex){_status.Text="Preset not saved: "+ex.Message;}
+    }
+    private void LoadSelectedPreset()
+    {
+        if(!CanChangeProfile())return;
+        int n=_presetChoice.SelectedItemPosition-1;
+        if(n<0||n>=_preferences.Presets.Count){_status.Text="Select a saved preset first.";return;}
+        try{
+            var profile=_preferences.Presets[n].Stimulus;
+            StimulusValidation.Validate(profile);
+            ApplyStimulusToFields(profile);
+            _preferences=_preferences with {LastStimulus=profile};
+            UserPreferencesStore.WriteFile(_preferencesPath,_preferences);
+            _status.Text="Preset loaded; the next experiment will use these settings.";
+        }catch(Exception ex){_status.Text="Preset not loaded: "+ex.Message;}
+    }
+    private void ApplyAppearance()
+    {
+        var scheme=_preferences.Appearance;
+        bool systemDark=(((int)Resources!.Configuration!.UiMode)&0x30)==0x20;
+        bool dark=scheme==AppearanceMode.Dark || (scheme==AppearanceMode.System && systemDark);
+        var bg=Color.ParseColor(_preferences.HighContrast?(dark?"#000000":"#FFFFFF"):(dark?"#17212E":"#F6F8FB"));
+        var fg=Color.ParseColor(_preferences.HighContrast?(dark?"#FFFFFF":"#000000"):(dark?"#F3F7FC":"#17202E"));
+        var accent=Color.ParseColor(dark?"#A4CAEF":"#213E64");
+        var buttonText=Color.ParseColor(dark?"#111C2B":"#FFFFFF");
+        _rootPanel.SetBackgroundColor(bg);
+        float scale=_preferences.FontScalePercent/100f;
+        var font=_preferences.FontFamily switch {
+            FontFamilyChoice.Serif=>Typeface.Serif,
+            FontFamilyChoice.Monospace=>Typeface.Monospace,
+            FontFamilyChoice.SansSerif=>Typeface.SansSerif,
+            _=>Typeface.Default
+        };
+        void Paint(View view)
+        {
+            if(view is TextView t){
+                t.SetTextColor(fg);
+                t.SetTypeface(font,TypefaceStyle.Normal);
+                float baseSp=_baseTextSizes.TryGetValue(t,out var value)?value:(t is EditText?16:14);
+                t.SetTextSize(ComplexUnitType.Sp,baseSp*scale);
+                if(t is EditText input) input.SetHintTextColor(fg);
+                if(t is Button button){
+                    button.BackgroundTintList=ColorStateList.ValueOf(accent);
+                    button.SetTextColor(buttonText);
+                }
+            }
+            if(view is Android.Views.ViewGroup group)
+                for(int i=0;i<group.ChildCount;i++)Paint(group.GetChildAt(i)!);
+        }
+        Paint(_rootPanel);
+    }
+
     private static double Parse(EditText field) => double.Parse(field.Text ?? "", CultureInfo.InvariantCulture);
     private TextView AddText(LinearLayout p, string t, float size)
     {
         var v = new TextView(this) { Text = t, TextSize = size };
         v.SetPadding(0, 12, 0, 6);
         p.AddView(v);
+        _baseTextSizes[v] = size;
         return v;
     }
     private EditText AddNumber(LinearLayout p, string label, string value)
     {
         AddText(p, label, 13);
         var v = new EditText(this) { Text = value };
+        v.Hint = label;
         v.InputType = Android.Text.InputTypes.ClassNumber |
             Android.Text.InputTypes.NumberFlagDecimal | Android.Text.InputTypes.NumberFlagSigned;
         p.AddView(v);
@@ -524,6 +791,7 @@ public sealed class MainActivity : Activity
     private Button AddButton(LinearLayout p, string name, Action action)
     {
         var btn = new Button(this) { Text = name };
+        btn.SetMinHeight((int)Math.Ceiling(48 * Resources!.DisplayMetrics!.Density));
         btn.Click += (_, _) => action();
         p.AddView(btn);
         return btn;
