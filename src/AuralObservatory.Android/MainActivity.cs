@@ -193,7 +193,7 @@ public sealed class MainActivity : Activity
     private bool EnsureBlePermission()
     {
         string[] required = Build.VERSION.SdkInt >= BuildVersionCodes.S
-            ? new[] { Android.Manifest.Permission.BluetoothScan!, Android.Manifest.Permission.BluetoothConnect! }
+            ? new[] { "android.permission.BLUETOOTH_SCAN", "android.permission.BLUETOOTH_CONNECT" }
             : new[] { Android.Manifest.Permission.AccessFineLocation! };
         if (required.All(permission => CheckSelfPermission(permission) == Permission.Granted)) return true;
         _sensorStatus.Text = "Android needs BLE permission to discover your strap. Approve, then tap Connect again.";
@@ -223,11 +223,11 @@ public sealed class MainActivity : Activity
                         RunOnUiThread(() => ShowSensorObservation(observation));
                     }
                 }
-                catch (OperationCanceledException) { }
+                catch (System.OperationCanceledException) { }
                 catch (Exception ex) { RunOnUiThread(() => _sensorStatus.Text = "Sensor stream ended: " + ex.Message); }
             });
         }
-        catch (OperationCanceledException) { _sensorStatus.Text = "Sensor selection cancelled."; await sensor.DisposeAsync(); }
+        catch (System.OperationCanceledException) { _sensorStatus.Text = "Sensor selection cancelled."; await sensor.DisposeAsync(); }
         catch (Exception ex) { _sensorStatus.Text = "BLE connection failed: " + ex.Message; await sensor.DisposeAsync(); }
         finally { _sensorConnecting = false; }
     }
