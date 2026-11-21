@@ -89,7 +89,7 @@ public sealed class MainActivity : Activity
         _motionChoice = AddCheck(appearancePanel,"Reduce motion",_preferences.ReduceMotion);
         AddButton(appearancePanel,"SAVE APPEARANCE AND AUDIO SETTINGS",SavePreferences);
         _presetName = new EditText(this){Hint="New preset name (up to 64 characters)"};
-        _presetName.ContentDescription="Name for a new audio settings preset";
+
         appearancePanel.AddView(_presetName);
         AddButton(appearancePanel,"SAVE NAMED AUDIO PRESET",SaveNamedPreset);
         _presetChoice = AddChoice(appearancePanel,"Saved audio presets",new[]{"None saved"},0);
@@ -115,6 +115,7 @@ public sealed class MainActivity : Activity
         _amHz = AddNumber(soundPanel, "Amplitude modulation (Hz; 0–20)", "0");
         _amDepth = AddNumber(soundPanel, "Modulation depth (0–0.9)", "0");
         _status = AddText(soundPanel, "Idle. Audio plays only after pressing Start.", 13);
+        _status.AccessibilityLiveRegion = AccessibilityLiveRegion.Polite;
 
         _play = AddButton(soundPanel, "START 15-SECOND PREVIEW", () => StartPreview());
         AddButton(soundPanel, "STOP", StopPreview);
@@ -122,6 +123,7 @@ public sealed class MainActivity : Activity
         AddText(sensorPanel, "LIVE HEART-RATE SENSOR (OPTIONAL)", 19);
         AddText(sensorPanel, "Garmin HRM-Pro Plus / compatible BLE 0x180D strap. Live BPM and optional RR intervals. These do NOT detect tinnitus suppression. No upload or cloud connection.", 12);
         _sensorStatus = AddText(sensorPanel, "Sensor disconnected. Wear and moisten the chest strap before connecting.", 13);
+        _sensorStatus.AccessibilityLiveRegion = AccessibilityLiveRegion.Polite;
         AddButton(sensorPanel, "CONNECT BLE HEART-RATE SENSOR", () => _ = ConnectSensorAsync());
         AddButton(sensorPanel, "DISCONNECT SENSOR", () => _ = DisconnectSensorAsync());
         _recordSensor = AddCheck(sensorPanel, "Record sensor readings locally ONLY while a preview plays", false);
@@ -137,8 +139,13 @@ public sealed class MainActivity : Activity
         _quietMode.Adapter = modeAdapter;
         searchPanel.AddView(_quietMode);
         _searchStatus = AddText(searchPanel, "No search started. Each candidate plays for 15 seconds; mark quiet during and after sound.", 13);
+        _searchStatus.AccessibilityLiveRegion = AccessibilityLiveRegion.Polite;
         AddButton(searchPanel, "START / NEXT SEARCH TRIAL", SearchNext);
-        _quietHold = AddButton(searchPanel, "PRESS AND HOLD WHEN QUIET", () => { });
+        _quietHold = AddButton(searchPanel, "PRESS AND HOLD WHEN QUIET", () => {
+            // TalkBack/Switch Access expose click actions rather than raw pointer presses.
+            if (_quietInput.Mode == QuietInputMode.ToggleQuiet) { QuietButton(true); QuietButton(false); }
+            else QuietButton(!_quietInput.IsPressed);
+        });
         _quietHold.Touch += (_, e) =>
         {
             if (e.Event is null) return;
@@ -678,7 +685,7 @@ public sealed class MainActivity : Activity
     {
         AddText(p, label, 13);
         var v = new EditText(this) { Text = value };
-        v.ContentDescription = label;
+        v.Hint = label;
         v.InputType = Android.Text.InputTypes.ClassNumber |
             Android.Text.InputTypes.NumberFlagDecimal | Android.Text.InputTypes.NumberFlagSigned;
         p.AddView(v);
@@ -705,6 +712,7 @@ public sealed class MainActivity : Activity
     private Button AddButton(LinearLayout p, string name, Action action)
     {
         var btn = new Button(this) { Text = name };
+        btn.SetMinHeight((int)Math.Ceiling(48 * Resources!.DisplayMetrics!.Density));
         btn.Click += (_, _) => action();
         p.AddView(btn);
         return btn;
