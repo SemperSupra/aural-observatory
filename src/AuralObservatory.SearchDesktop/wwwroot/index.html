@@ -42,6 +42,10 @@ small,.muted{color:var(--muted)}textarea{width:100%;min-height:85px}#status{whit
 <button id="save-preset">Save named preset</button></p>
 <label>Saved profiles <select id="presets" aria-describedby="preset-info"><option value="">None yet</option></select></label>
 <button id="load-preset">Load selected preset for the next session</button>
+<p><button id="export-prefs">Export settings as JSON</button>
+<label>Import settings and presets from JSON <input type="file" accept=".json,application/json" id="import-file"></label>
+<button id="import-prefs">Import selected settings</button></p>
+<p class="muted">Profiles are stored outside installed application files. Export before reinstalling or replacing debug builds; imports are validated before replacement.</p>
 <p class="muted" id="preset-info">A preset records audio settings, not a medically validated treatment. The active study keeps its original configuration until restarted.</p>
 <p role="status" aria-live="polite" id="prefs-status">Loading preferences…</p>
 </section>
@@ -147,4 +151,22 @@ document.querySelector('#load-preset').addEventListener('click',async()=>{
  catch(e){prefsStatus.textContent='Preset not loaded: '+e.message;}
 });
 void reloadPreferences();
+document.querySelector('#export-prefs').addEventListener('click',()=>{
+ if(!prefs)return;
+ const b=new Blob([JSON.stringify(prefs,null,2)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(b);
+ a.download='aural-observatory-preferences-v1.json';a.click();URL.revokeObjectURL(a.href);
+});
+document.querySelector('#import-prefs').addEventListener('click',async()=>{
+ const selected=document.querySelector('#import-file').files?.[0];
+ if(!selected)return prefsStatus.textContent='Choose a JSON file to import.';
+ if(selected.size>65536)return prefsStatus.textContent='Preferences exceed the 64 KiB import limit.';
+ try{
+  const body=JSON.parse(await selected.text());
+  await api('preferences',body);
+  await reloadPreferences();
+  prefsStatus.textContent='Settings and presets imported after validation.';
+ }catch(e){prefsStatus.textContent='Import was rejected; previous settings preserved: '+e.message;}
+});
+
 </script></body></html>
