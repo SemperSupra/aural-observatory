@@ -65,3 +65,7 @@ G1 before distributing an APK; G2/G3 before prolonged listening. G4 independent 
 - Hardware: ANT+ bidirectional USB-m as future adapter; existing bladeRF x40 conducted/attenuated RF lab only until PHY/protocol/safety regulatory qualification. ReSound Smart 3D proprietary control unsupported; generic OS audio route dependent on exact hearing-aid model, and fitting/latency alter stimulus.
 - Optional facial/gaze/blink/posture feature extraction only with granular separate consent, no default camera or emotion/tinnitus claims; detailed `docs/research/R8-INTEROPERABILITY-AND-OBSERVERS.md`. TinEar is NOT confirmed available as name.
 - Public 3-OS synthetic protocol CI pending; release, actual SDR TX and hearing aid tests remain blocked.
+
+### R8-C name and release research update
+- Confirmed `TinEar` has existing historic use for a 40-m amateur radio receiver kit (American QRP Club, amqrp.org/tinear-receiver-kit). Not currently identified as tinnitus app; legal/app-store/domain clearance remains unverified, so do not rename prematurely.
+- Preregistered N-of-1 typed planner is isolated source/test infrastructure, not connected to live clinical user journeys, speech, biosensor acquisition or a blinded trial runner. Only synthetic public CI tests can validate its deterministic blocked design.
