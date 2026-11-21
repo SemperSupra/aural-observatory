@@ -19,7 +19,7 @@ small,.muted{color:var(--muted)}textarea{width:100%;min-height:85px}#status{whit
 <main id="content" tabindex="-1">
 <p>Research tool, not medical treatment. Begin at a low device volume. Generated PCM level is not headphone SPL. This search <strong>never raises gain</strong>.</p>
 <section id="experiment" aria-labelledby="experiment-title"><h2 id="experiment-title">1. Explore fixed-level sound trials</h2><p id="status" role="status" aria-live="polite">Ready. Each trial plays for 15 seconds. Press and hold during perceived quiet; continue holding after playback if tinnitus remains reduced.</p>
-<button id="next">Start / next trial</button> <button id="stop">Stop</button>
+<button id="next">Start / next trial</button> <button id="stop">Stop</button> <button id="reset-search">New search (retain observations)</button>
 <audio id="sound" preload="auto"></audio>
 </section>
 <section aria-labelledby="response-title"><h2 id="response-title">2. Mark perceived quiet</h2><label>Response style: <select id="mode"><option value="HoldWhenQuiet">Hold while quiet</option><option value="ReleaseWhenQuiet">Hold while tinnitus is audible; RELEASE when quiet</option><option value="ToggleQuiet">Tap once to start quiet, again to end</option></select></label>
@@ -87,6 +87,11 @@ document.querySelector('#next').onclick=async()=>{try{await annotate();const tri
 }catch(e){msg('Could not start: '+e.message);}};
 audio.addEventListener('ended',async()=>{active=false;post=true;await api('ended');resetInput();msg('Stimulus stopped: re-arm your selected input mode to mark post-sound quiet. Observe at least 10 seconds.');});
 document.querySelector('#stop').onclick=async()=>{audio.pause();audio.currentTime=0;active=false;post=false;resetInput();mode.disabled=false;await api('interrupt');msg('Stopped. Incomplete trial excluded from ranking.');};
+document.querySelector('#reset-search').onclick=async()=>{
+ try{await api('reset');active=false;post=false;resetInput();mode.disabled=false;
+ msg('New search ready. Previous observations retained; saved audio profile will apply.');}
+ catch(e){msg('Could not reset: '+e.message);}
+};
 document.querySelector('#export').onclick=async()=>{const r=await fetch('/api/export',{headers:{'X-Aural-Token':token}});const txt=await r.text();const blob=new Blob([txt],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='aural-quiet-search.csv';a.click();URL.revokeObjectURL(a.href);};
 
 const theme=document.querySelector('#theme'),fontFamily=document.querySelector('#font-family'),
