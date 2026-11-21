@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Android.App;
@@ -13,7 +12,7 @@ using Android.Views.InputMethods;
 using Android.Widget;
 using AuralObservatory.Core;
 
-namespace AuralObservatory.AndroidApp;
+namespace AuralObservatoryMobile;
 
 /// <summary>Actual Android Views + native AudioTrack. No WebView, browser runtime, server, or network permission.</summary>
 [Activity(Label = "Aural Observatory", MainLauncher = true, Exported = true)]
@@ -36,7 +35,7 @@ public sealed class MainActivity : Activity
     {
         base.OnCreate(savedInstanceState);
         var outer = new ScrollView(this) { FillViewport = true };
-        var layout = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        var layout = new LinearLayout(this) { Orientation = Android.Widget.Orientation.Vertical };
         layout.SetPadding(32, 28, 32, 36);
         outer.AddView(layout);
         SetContentView(outer);
@@ -86,10 +85,10 @@ public sealed class MainActivity : Activity
                 settings.ModulationHz, settings.ModulationDepth);
             // Native Android streaming audio; the Android audio mixer still controls headphone SPL.
             const int sr = StimulusValidation.SampleRate;
-            int min = AudioTrack.GetMinBufferSize(sr, ChannelOut.Stereo, Encoding.Pcm16bit);
+            int min = AudioTrack.GetMinBufferSize(sr, ChannelOut.Stereo, Android.Media.Encoding.Pcm16bit);
             if (min <= 0) throw new InvalidOperationException("Audio output is unavailable.");
             var track = new AudioTrack(Android.Media.Stream.Music, sr, ChannelOut.Stereo,
-                Encoding.Pcm16bit, Math.Max(min, 4096), AudioTrackMode.Stream);
+                Android.Media.Encoding.Pcm16bit, Math.Max(min, 4096), AudioTrackMode.Stream);
             if (track.State != AudioTrackState.Initialized)
             {
                 track.Release();
