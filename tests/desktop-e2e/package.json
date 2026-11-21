@@ -1,0 +1,11 @@
+{
+  "name": "aural-observatory-desktop-browser-qualification",
+  "private": true,
+  "version": "0.9.0",
+  "description": "Synthetic, no-personal-data, desktop web UI qualification.",
+  "scripts": { "test": "node browser-smoke.cjs" },
+  "devDependencies": {
+    "playwright": "1.57.0",
+    "@axe-core/playwright": "4.11.0"
+  }
+}
