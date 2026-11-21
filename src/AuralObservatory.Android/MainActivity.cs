@@ -164,6 +164,7 @@ public sealed class MainActivity : Activity
         searchPanel.AddView(_voiceNote);
         AddButton(searchPanel, "DICTATE OPTIONAL NOTE (SYSTEM SPEECH)", DictateNote);
         AddButton(searchPanel, "END SEARCH / SAVE CURRENT TRIAL", EndSearch);
+        AddButton(searchPanel, "NEW SEARCH (KEEP SAVED RESULTS)", ResetSearch);
         AddText(searchPanel, "Voice transcription is provided by the installed Android speech service and may use the network. It is opt-in and disabled during playback. No voice-controlled gain or treatment changes.", 12);
         var observationPanel = AddExpandableSection(layout,"Observations and export",false);
         AddText(observationPanel, "SELF-OBSERVATION (0–10)", 19);
@@ -378,6 +379,18 @@ public sealed class MainActivity : Activity
         if (_search?.State == SearchState.PostStimulus) CompleteSearchTrial(false);
         else _searchStatus.Text = "No completed search trial to save.";
     }
+    private void ResetSearch()
+    {
+        if (_cancellation is not null || _search?.State is SearchState.Stimulating or SearchState.PostStimulus)
+        { _searchStatus.Text="Stop/finish the current audio and post-stimulus interval first."; return; }
+        try {
+            _search = new QuietSearch(CaptureSettings(), SearchEar.Both);
+            _quietInput.Cancel();
+            _quietMode.Enabled = true;
+            _searchStatus.Text="New randomized frequency search ready; prior results remain in your user-data journal.";
+        }catch(Exception ex){_searchStatus.Text="Cannot reset: "+ex.Message;}
+    }
+
     private void DictateNote()
     {
         if (_cancellation is not null) { _searchStatus.Text = "Stop playback before using speech recognition."; return; }
