@@ -64,7 +64,7 @@ public sealed class BleHeartRateSensor : IPhysiologicalSensor
             {
                 SingleReader = true,
                 SingleWriter = false,
-                FullMode = BoundedChannelFullMode.DropWrite
+                FullMode = BoundedChannelFullMode.Wait
             });
             characteristic.CharacteristicValueChanged += OnValueChanged;
             await characteristic.StartNotificationsAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
