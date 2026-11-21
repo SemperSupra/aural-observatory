@@ -641,7 +641,7 @@ public sealed class MainActivity : Activity
                 : ContentResolver!.OpenOutputStream(data.Data))
                 ?? throw new IOException("Document stream unavailable");
             if(requestCode==471){
-                using var reader=new StreamReader(stream,Encoding.UTF8);
+                using var reader=new StreamReader(stream,System.Text.Encoding.UTF8);
                 var buffer=new char[65537];
                 int count=reader.ReadBlock(buffer,0,buffer.Length);
                 if(count>=buffer.Length)throw new IOException("Preferences JSON exceeds 64 KiB");
@@ -661,7 +661,7 @@ public sealed class MainActivity : Activity
                 ApplyAppearance();
                 _status.Text="Preferences imported after schema validation; previous data preserved until import completed.";
             } else {
-                var bytes=Encoding.UTF8.GetBytes(UserPreferencesStore.ToJson(_preferences));
+                var bytes=System.Text.Encoding.UTF8.GetBytes(UserPreferencesStore.ToJson(_preferences));
                 stream.Write(bytes,0,bytes.Length);
                 stream.Flush();
                 _status.Text="Settings/presets exported to the location you selected.";
