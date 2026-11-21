@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Android.App;
+using Android.Speech;
 using Android.Content;
 using Android.Media;
 using Android.OS;
@@ -40,6 +41,12 @@ public sealed class MainActivity : Activity
     private TextView _sensorStatus = null!;
     private CheckBox _recordSensor = null!;
     private readonly System.Collections.Generic.Queue<ushort> _rrWindow = new();
+    private QuietSearch? _search;
+    private TextView _searchStatus = null!;
+    private EditText _voiceNote = null!;
+    private Button _quietHold = null!;
+    private double _lastSoundStoppedAt;
+
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -82,6 +89,23 @@ public sealed class MainActivity : Activity
         AddButton(layout, "DISCONNECT SENSOR", () => _ = DisconnectSensorAsync());
         _recordSensor = AddCheck(layout, "Record sensor readings locally ONLY while a preview plays", false);
         AddButton(layout, "SHARE SENSOR READINGS AS CSV", ShareSensorObservations);
+        AddText(layout, "QUIET SEARCH (EXPERIMENTAL)", 19);
+        AddText(layout, "Randomized fixed-level frequency trials. Hold QUIET only while tinnitus SEEMS absent. During sound = masking; after sound = possible residual inhibition. Never increases volume. Not evidence of efficacy.", 12);
+        _searchStatus = AddText(layout, "No search started. Each candidate plays for 15 seconds; mark quiet during and after sound.", 13);
+        AddButton(layout, "START / NEXT SEARCH TRIAL", SearchNext);
+        _quietHold = AddButton(layout, "PRESS AND HOLD WHEN QUIET", () => { });
+        _quietHold.Touch += (_, e) =>
+        {
+            if (e.Event is null) return;
+            if (e.Event.ActionMasked == MotionEventActions.Down) { QuietButton(true); e.Handled = true; }
+            else if (e.Event.ActionMasked is MotionEventActions.Up or MotionEventActions.Cancel)
+            { QuietButton(false); e.Handled = true; }
+        };
+        _voiceNote = new EditText(this) { Hint = "Optional note, or dictate after playback" };
+        layout.AddView(_voiceNote);
+        AddButton(layout, "DICTATE OPTIONAL NOTE (SYSTEM SPEECH)", DictateNote);
+        AddButton(layout, "END SEARCH / SAVE CURRENT TRIAL", EndSearch);
+        AddText(layout, "Voice transcription is provided by the installed Android speech service and may use the network. It is opt-in and disabled during playback. No voice-controlled gain or treatment changes.", 12);
         AddText(layout, "SELF-OBSERVATION (0–10)", 19);
         _before = AddNumber(layout, "Tinnitus loudness BEFORE playback", "");
         _after = AddNumber(layout, "Tinnitus loudness AFTER playback", "");
@@ -118,7 +142,11 @@ public sealed class MainActivity : Activity
             _status.Text = "Playing 15-second experimental preview. STOP is available.";
             _ = Task.Run(() => RenderPlayback(engine, track, cts));
         }
-        catch (Exception ex) { _status.Text = "Unable to start: " + ex.Message; }
+        catch (Exception ex)
+        {
+            if (_search?.State == SearchState.Stimulating) _search.Finish(QuietSearch.NowSeconds(), interrupted: true);
+            _status.Text = "Unable to start: " + ex.Message;
+        }
     }
 
     private void RenderPlayback(StimulusEngine engine, AudioTrack track, CancellationTokenSource cts)
@@ -167,6 +195,20 @@ public sealed class MainActivity : Activity
             {
                 _play.Enabled = true;
                 _recordable = finalCompleted;
+                if (_search?.State == SearchState.Stimulating)
+                {
+                    if (finalCompleted)
+                    {
+                        _lastSoundStoppedAt = QuietSearch.NowSeconds();
+                        _search.SoundStopped(_lastSoundStoppedAt);
+                        _searchStatus.Text = "SOUND STOPPED. Hold QUIET if tinnitus remains reduced. Rate or dictate after a silent observation window (minimum 10 s).";
+                    }
+                    else
+                    {
+                        _search.Finish(QuietSearch.NowSeconds(), interrupted: true);
+                        _searchStatus.Text = "Audio interrupted: trial excluded from ranking.";
+                    }
+                }
                 if (finalCompleted) _status.Text = "15-second preview completed. Rate symptoms after silence.";
                 else if (_status.Text?.StartsWith("Audio error:", StringComparison.Ordinal) != true)
                     _status.Text = "Stopped; incomplete preview not eligible for outcome logging.";
@@ -186,10 +228,100 @@ public sealed class MainActivity : Activity
     protected override void OnPause()
     {
         StopPreview();
+        QuietButton(false);
         _ = DisconnectSensorAsync(); // foreground-only capture; no silent background sampling
         base.OnPause();
     }
     protected override void OnDestroy() { StopPreview(); _ = DisconnectSensorAsync(); base.OnDestroy(); }
+
+    public override bool OnKeyDown(Keycode keyCode, KeyEvent? e)
+    {
+        if (keyCode == Keycode.Space && _search?.State is SearchState.Stimulating or SearchState.PostStimulus)
+        { QuietButton(true); return true; }
+        return base.OnKeyDown(keyCode, e);
+    }
+    public override bool OnKeyUp(Keycode keyCode, KeyEvent? e)
+    {
+        if (keyCode == Keycode.Space && _search is not null)
+        { QuietButton(false); return true; }
+        return base.OnKeyUp(keyCode, e);
+    }
+
+    private void QuietButton(bool down)
+    {
+        if (_search?.State is not (SearchState.Stimulating or SearchState.PostStimulus)) return;
+        _search.MarkQuiet(down, QuietSearch.NowSeconds());
+        _quietHold.Text = down ? "QUIET MARK ACTIVE — RELEASE TO END" : "PRESS AND HOLD WHEN QUIET";
+    }
+
+    private void SearchNext()
+    {
+        if (_cancellation is not null) { _searchStatus.Text = "Stop or finish current playback first."; return; }
+        try
+        {
+            _search ??= new QuietSearch(CaptureSettings(), SearchEar.Both);
+            if (_search.State == SearchState.PostStimulus)
+            {
+                if (QuietSearch.NowSeconds() - _lastSoundStoppedAt < 10)
+                { _searchStatus.Text = "Observe at least 10 seconds of silence before advancing."; return; }
+                CompleteSearchTrial(false);
+            }
+            if (_search.State == SearchState.Finished) { _searchStatus.Text = "Search finished. Reset app to start a new search."; return; }
+            var candidate = _search.Begin(QuietSearch.NowSeconds());
+            _leftHz.Text = candidate.Settings.Left.FrequencyHz.ToString("F2", CultureInfo.InvariantCulture);
+            _rightHz.Text = candidate.Settings.Right.FrequencyHz.ToString("F2", CultureInfo.InvariantCulture);
+            _searchStatus.Text = $"Trial {candidate.Number} / {candidate.Stage} at {candidate.FrequencyHz:F0} Hz (fixed level). Hold QUIET on silence; release otherwise.";
+            StartPreview();
+        }
+        catch (Exception ex) { _searchStatus.Text = "Search error: " + ex.Message; }
+    }
+
+    private void CompleteSearchTrial(bool interrupted)
+    {
+        if (_search?.State is not (SearchState.Stimulating or SearchState.PostStimulus)) return;
+        QuietButton(false);
+        double? after = double.TryParse(_after.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && v >= 0 && v <= 10 ? v : null;
+        _search.Annotate(_voiceNote.Text, after);
+        var result = _search.Finish(QuietSearch.NowSeconds(), interrupted);
+        string line = string.Join(",", DateTimeOffset.UtcNow.ToString("O"), result.Candidate.Number,
+            result.Candidate.FrequencyHz.ToString("F2", CultureInfo.InvariantCulture),
+            result.Candidate.Stage, result.Candidate.RepeatedControl,
+            result.DuringQuietSeconds.ToString("F3", CultureInfo.InvariantCulture),
+            result.AfterQuietSeconds.ToString("F3", CultureInfo.InvariantCulture),
+            result.Interrupted, result.LoudnessAfter?.ToString(CultureInfo.InvariantCulture) ?? "",
+            "\"" + (result.Note ?? "").Replace("\"", "\"\"").Replace("\r", " ").Replace("\n", " ") + "\"");
+        string file = Path.Combine(FilesDir!.AbsolutePath, "quiet_search.csv");
+        if (!File.Exists(file)) File.WriteAllText(file, "timestamp_utc,trial,hz,stage,control,during_quiet_s,after_quiet_s,interrupted,loudness_after,note\n");
+        File.AppendAllText(file, line + "\n");
+        _voiceNote.Text = ""; _after.Text = "";
+        _searchStatus.Text = $"Trial {result.Candidate.Number} saved locally. During: {result.DuringQuietSeconds:F1}s; AFTER silence: {result.AfterQuietSeconds:F1}s.";
+    }
+    private void EndSearch()
+    {
+        if (_cancellation is not null) { StopPreview(); _searchStatus.Text = "Stopping playback. Interrupted trial will not count."; return; }
+        if (_search?.State == SearchState.PostStimulus) CompleteSearchTrial(false);
+        else _searchStatus.Text = "No completed search trial to save.";
+    }
+    private void DictateNote()
+    {
+        if (_cancellation is not null) { _searchStatus.Text = "Stop playback before using speech recognition."; return; }
+        try
+        {
+            var intent = new Intent(RecognizerIntent.ActionRecognizeSpeech);
+            intent.PutExtra(RecognizerIntent.ExtraLanguageModel, RecognizerIntent.LanguageModelFreeForm);
+            intent.PutExtra(RecognizerIntent.ExtraPreferOffline, true); // A hint, not a guarantee.
+            intent.PutExtra(RecognizerIntent.ExtraMaxResults, 1);
+            StartActivityForResult(intent, 470);
+        }
+        catch (Exception ex) { _searchStatus.Text = "No compatible system speech recognizer: " + ex.Message; }
+    }
+    protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
+    {
+        base.OnActivityResult(requestCode, resultCode, data);
+        if (requestCode != 470 || resultCode != Result.Ok || data is null) return;
+        var phrases = data.GetStringArrayListExtra(RecognizerIntent.ExtraResults);
+        if (phrases is { Count: > 0 }) _voiceNote.Text = phrases[0];
+    }
 
     private bool EnsureBlePermission()
     {

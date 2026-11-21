@@ -41,3 +41,12 @@ G1 before distributing an APK; G2/G3 before prolonged listening. G4 independent 
 - Windows and Linux console diagnostics use the same code and local-only CSV. Mac CoreBluetooth target is in source with CI compile gate (runtime permissions/hardware still pending); ANT+, Garmin proprietary data and persistent signed releases remain open.
 - G4 qualification split: G4a parser tests/CI; G4b real HRM-Pro Plus BLE discovery and RR visibility; G4c timestamp and drop characterization; G4d Mac/native-device adapter and usability.
 - No collection of user physiological data within GitHub Actions. Synthetic fixture-only CI. Never include BLE addresses, pairing secrets, raw recordings, device serials, or personal biometrics in Git.
+
+## Search and data-source increment — R6
+- **Scope:** Generic SIG BLE HRM source remains transport-neutral; Garmin Personal history uses separate read-only `IHistoricalDataSource` and explicit user credentials.
+- **Implemented in source:** randomized fixed-gain logarithmic frequency search with repeated baseline, separate masking/post-stimulus interval holds, optional refinement, native Android pointer/keyboard UI and opt-in system voice-note intent, desktop local browser controls with same C# DSP, user-triggered Garmin snapshot console.
+- **Atomic actions:** `trial.plan`, `trial.begin`, `user.quiet.down`, `user.quiet.up`, `audio.actual-stop`, `trial.annotate`, `trial.complete`, `result.local-export`, `source.authorize`, `source.fetch-day`, `voice.note-once`.
+- **Trial state:** Ready → Stimulating → PostStimulus → TrialComplete → Ready or Finished; interrupted trials are retained but excluded from ranking. Device volume never adjusted by a search.
+- **Trust:** No clinical conclusions from subjective silence or HRV; no passive microphones; Personal API key is owned by the user, not checked in or used for public multiuser login; Android speech intent may not be offline despite preference.
+- **Gates:** R6 synthetic build/test and Android compile pending CI; microphone/system provider qualification, live HRM, real Garmin account, device acoustic safety, and N-of-1 study remain open.
+- See `docs/AUTOTUNE-AND-DATASOURCES.md` for algorithms, interfaces, qualification and safety.
