@@ -16,6 +16,8 @@ check(/:focus-visible/.test(html),'high-visibility focus style');
 check(/prefers-color-scheme:\s*dark/.test(html),'system appearance tracked');
 check(/prefers-reduced-motion:reduce/.test(html),'system reduced motion respected');
 check(/id="quiet"[^>]*aria-label/.test(html),'quiet button has usable accessible name');
+check(/keyboardShortcutAllowed\(e\.target\)/.test(html),'Space shortcut gated by target');
+check(/button,input,textarea,select,a/.test(html),'Space does not hijack focused native controls');
 check(/<audio\b(?![^>]*autoplay)/.test(html),'audio does not autoplay');
 check(/max-width:\s*100%/.test(html),'fluid controls can reflow');
 check(/min-height:\s*48px/.test(html),'touch target size contract');
