@@ -31,7 +31,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      # SDK already provided on hosted Linux runner; setup-android tries removed 'tools' package.
+      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - run: dotnet workload install android
       - run: dotnet build src/AuralObservatory.Android/AuralObservatory.Android.csproj -c Debug
       - name: Upload debug-only test APK
