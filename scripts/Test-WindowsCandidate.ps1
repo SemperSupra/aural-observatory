@@ -6,8 +6,10 @@ $exe = Join-Path $appDir 'AuralObservatory.SearchDesktop.exe'
 $uninstaller = Join-Path $appDir 'Uninstall.exe'
 $registryKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\AuralObservatory'
 function Invoke-ExpectedSuccess([string]$Command, [string]$Phase) {
-    & $Command /S
-    if ($LASTEXITCODE -ne 0) { throw "$Phase exited $LASTEXITCODE" }
+    # NSIS is a GUI-subsystem process. PowerShell's direct-call LASTEXITCODE can be null;
+    # Start-Process -Wait captures the actual process exit code without a false failure.
+    $proc = Start-Process -FilePath $Command -ArgumentList '/S' -PassThru -Wait
+    if ($proc.ExitCode -ne 0) { throw "$Phase exited $($proc.ExitCode)" }
 }
 if (Test-Path $exe) { throw 'Preflight: non-clean test user profile; refusing to overwrite it' }
 Invoke-ExpectedSuccess $installerPath 'install'
