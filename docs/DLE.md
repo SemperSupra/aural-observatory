@@ -75,3 +75,9 @@ G1 before distributing an APK; G2/G3 before prolonged listening. G4 independent 
 - Source audit identified global Space shortcut interfering with native interactive controls; restricted shortcut to non-interactive focused targets, and CI static test now guards that behavior.
 - Outstanding: desktop ear-setting editing and valid preset capture, single-instance/browser launch/lifecycle, native output routing and accessibility end-to-end on Edge/NVDA, Safari/VoiceOver, Firefox/Orca, app packaging conventions and opt-in BLE controls. No platform release claim until tested.
 - DLE owner: https://github.com/SemperSupra/aural-observatory/issues/12; current implementation PR #10. Hardware acoustic qualification remains independent HARD BLOCK.
+
+## R9-D: desktop per-ear stimulus editor and accurate preset provenance
+- Scope: source-owned desktop local browser interface now exposes separate editable left/right notch center, width, digital gain, noise color, notch enable plus global modulation Hz/depth. Numeric validation checks finite limits before sending a fully typed `UserPreferences` document to a token-guarded C# endpoint; server validates with `StimulusValidation` and atomically saves in OS user-data directory.
+- Named presets now first persist the currently edited audio settings, then save the immutable named snapshot; loading a preset restores both ears. Search input remains frozen once a trial begins; start a new search to apply a changed profile.
+- Existing observation CSVs are retained; desktop settings are independent of app binaries. New DOM/contract assertions track ear fields and persisted mapping.
+- CI: await R9-D and R8-B tests on Windows 2025, Ubuntu 24.04, macOS 26; browser-based interaction requires separate R9-Q suite. Real transducer and hearing-aid SPL remain hard gates.
