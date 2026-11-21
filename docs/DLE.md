@@ -75,3 +75,8 @@ G1 before distributing an APK; G2/G3 before prolonged listening. G4 independent 
 - Source audit identified global Space shortcut interfering with native interactive controls; restricted shortcut to non-interactive focused targets, and CI static test now guards that behavior.
 - Outstanding: desktop ear-setting editing and valid preset capture, single-instance/browser launch/lifecycle, native output routing and accessibility end-to-end on Edge/NVDA, Safari/VoiceOver, Firefox/Orca, app packaging conventions and opt-in BLE controls. No platform release claim until tested.
 - DLE owner: https://github.com/SemperSupra/aural-observatory/issues/12; current implementation PR #10. Hardware acoustic qualification remains independent HARD BLOCK.
+
+## R9-Q: browser-driven automated UX qualification
+- Scope: public Ubuntu 24.04 Chromium in headless mode, installed with exact-version Playwright and axe; spawn local C# desktop from source, verify accessibility landmarks, system appearance, font scaling/contrast, persisted theme/response, preset creation and 320px reflow; automated WCAG 2/2.1 A/AA serious/critical findings are fail-closed.
+- Machine-readable `artifacts/ui/desktop-browser-smoke.json` receipt is synthetic only; no user biometrics, no actual speaker/headphone output, and no credentialed/private GitHub runner.
+- This is a browser interaction check on Linux Chromium, NOT native Windows Edge/NVDA, macOS Safari/VoiceOver, Linux Firefox/Orca or manual screen-reader qualification. Keep issue #12 unclosed.
