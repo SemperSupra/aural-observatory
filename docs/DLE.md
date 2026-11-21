@@ -75,3 +75,8 @@ G1 before distributing an APK; G2/G3 before prolonged listening. G4 independent 
 - Source audit identified global Space shortcut interfering with native interactive controls; restricted shortcut to non-interactive focused targets, and CI static test now guards that behavior.
 - Outstanding: desktop ear-setting editing and valid preset capture, single-instance/browser launch/lifecycle, native output routing and accessibility end-to-end on Edge/NVDA, Safari/VoiceOver, Firefox/Orca, app packaging conventions and opt-in BLE controls. No platform release claim until tested.
 - DLE owner: https://github.com/SemperSupra/aural-observatory/issues/12; current implementation PR #10. Hardware acoustic qualification remains independent HARD BLOCK.
+
+## R9-S: desktop lifecycle launcher
+- Scope: `DesktopSession` acquires per-OS-user exclusive data-directory file handle (not mere stale-file marker) to prevent competing local servers. Kestrel binds only an OS-allocated ephemeral `127.0.0.1` port, prints actual local URL, and opens default browser when an interactive display is available. Supports `--no-browser`, `--headless` and `AURAL_NO_BROWSER=1`; explicit token-protected Exit application endpoint gracefully stops host.
+- Tests link actual launcher source into portable harness; verify duplicate lock rejection, release/reacquisition, browser opt-out, Linux headless behavior, and localhost-only URI guard. Public 3-OS CI validates source, not a genuine OS-bundled desktop shell.
+- This is still a browser-backed C# desktop, not WebView2/WKWebView/WebKitGTK or a native widget application; OS notifications, menu, file dialogs, background lifecycle and packaging standards remain issue #12 gates. No network/cloud service or additional private runner usage.
