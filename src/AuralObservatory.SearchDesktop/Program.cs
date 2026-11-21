@@ -53,7 +53,8 @@ app.MapPost("/api/preferences", (UserPreferences input) =>
         try {
             UserPreferencesStore.WriteFile(preferencesPath, input);
             preferences = input;
-            return Results.Ok(new { saved = true, nextTrialUsesSavedAudioSettings = false });
+            if(search.State == SearchState.Ready && !search.Results.Any()) search = new QuietSearch(input.LastStimulus);
+            return Results.Ok(new { saved = true, appliesToNewSearch = true });
         }
         catch(Exception ex) when(ex is ArgumentException or NotSupportedException or FormatException)
         { return Results.BadRequest(new { error=ex.Message }); }
@@ -72,6 +73,20 @@ app.MapPost("/api/preset", (PresetInput input) =>
         }
         catch(Exception ex) when(ex is ArgumentException or InvalidOperationException or FormatException)
         {return Results.BadRequest(new {error=ex.Message});}
+    }
+});
+app.MapPost("/api/preset/load", (PresetInput input) =>
+{
+    lock(gate) {
+        if(search.State is SearchState.Stimulating or SearchState.PostStimulus)
+            return Results.Conflict(new { error = "Finish the current trial first" });
+        var match=preferences.Presets.FirstOrDefault(p=>string.Equals(p.Name,input.Name,StringComparison.OrdinalIgnoreCase));
+        if(match is null) return Results.NotFound(new { error = "Preset not found" });
+        var next=preferences with { LastStimulus = match.Stimulus };
+        UserPreferencesStore.WriteFile(preferencesPath,next);
+        preferences=next;
+        if(search.State==SearchState.Ready && !search.Results.Any()) search=new QuietSearch(next.LastStimulus);
+        return Results.Ok(new { loaded=true, requiresFreshSearch = search.Results.Any() });
     }
 });
 app.MapPost("/api/next", (ModeInput input) =>
