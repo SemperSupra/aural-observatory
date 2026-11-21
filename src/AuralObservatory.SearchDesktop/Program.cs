@@ -39,8 +39,26 @@ var logPath = Path.Combine(dataDir, "quiet_search_r7.csv");
 app.Use(async (ctx, next) =>
 {
     ctx.Response.Headers.CacheControl = "no-store";
+    ctx.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    ctx.Response.Headers["Referrer-Policy"] = "no-referrer";
+    ctx.Response.Headers["X-Frame-Options"] = "DENY";
+    ctx.Response.Headers["Content-Security-Policy"] =
+        "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; " +
+        "connect-src 'self'; media-src 'self' blob:; img-src 'self' data:; font-src 'self'; " +
+        "base-uri 'none'; frame-ancestors 'none'; form-action 'none'";
+    // Host and Origin checks block local-service DNS rebinding and cross-origin execution.
+    if (!string.Equals(ctx.Request.Host.Host, "127.0.0.1", StringComparison.Ordinal) ||
+        ctx.Request.Host.Port is null)
+    { ctx.Response.StatusCode = 403; return; }
+    if (ctx.Request.Headers.TryGetValue("Origin", out var requestOrigins) && requestOrigins.Count > 0)
+    {
+        var expected = "http://127.0.0.1:" + ctx.Request.Host.Port.Value;
+        if (requestOrigins.Count != 1 ||
+            !string.Equals(requestOrigins.ToString(), expected, StringComparison.Ordinal))
+        { ctx.Response.StatusCode = 403; return; }
+    }
     if (ctx.Request.Path.StartsWithSegments("/api") &&
-        ctx.Request.Headers["X-Aural-Token"] != token && ctx.Request.Query["token"] != token)
+        ctx.Request.Headers["X-Aural-Token"] != token)
     { ctx.Response.StatusCode = 403; return; }
     await next();
 });
