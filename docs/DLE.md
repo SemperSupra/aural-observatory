@@ -58,3 +58,10 @@ G1 before distributing an APK; G2/G3 before prolonged listening. G4 independent 
 - Private Android and Windows Foundry repositories retain governance, eligibility and release controls. Public product/Foundry planes own reusable build mechanics; no private or personal input data in public CI.
 - G7 status: synthetic build/test and installer compilation PENDING; on-device BLE/ANT+ acquisition, acoustic validation, Windows install/uninstall, signing and production publishing NOT COMPLETE.
 - Authority and acceptance: docs/QUIET-MODES-AND-PACKAGING-R7.md, public PR for this branch, runner census SemperSupra/agent-dispatch-private#223/#281.
+
+## R8-C — research protocol and device interoperability boundaries
+- Owner PR: #11 (draft). `ExperimentProtocol` v1, schema and synthetic AB/BA blocked N-of-1 randomization; preregister a single outcome and active/control contrast, fixed gain/duration/washout, immutable stimulus hashes; automation only plans and analyzes, cannot initiate unsupervised exposure. Confirmatory efficacy is NOT established by exploratory AutoTune.
+- Research designs: randomized paired control/sham, repeatability, residual inhibition separately after sound, blinding where feasible, prereg exclusions/missingness, adverse events, longitudinal change and uncertainty; see `docs/research/R8-EXPERIMENT-DESIGN.md`.
+- Hardware: ANT+ bidirectional USB-m as future adapter; existing bladeRF x40 conducted/attenuated RF lab only until PHY/protocol/safety regulatory qualification. ReSound Smart 3D proprietary control unsupported; generic OS audio route dependent on exact hearing-aid model, and fitting/latency alter stimulus.
+- Optional facial/gaze/blink/posture feature extraction only with granular separate consent, no default camera or emotion/tinnitus claims; detailed `docs/research/R8-INTEROPERABILITY-AND-OBSERVERS.md`. TinEar is NOT confirmed available as name.
+- Public 3-OS synthetic protocol CI pending; release, actual SDR TX and hearing aid tests remain blocked.
