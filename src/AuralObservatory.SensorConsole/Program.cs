@@ -3,7 +3,7 @@ using AuralObservatory.Sensors;
 using AuralObservatory.Sensors.Ble;
 using InTheHand.Bluetooth;
 
-if (args.Length > 2 || args.Length == 1 && args[0] is not "--csv")
+if (args.Length > 2 || (args.Length > 0 && args[0] != "--csv"))
 {
     Console.Error.WriteLine("Usage: dotnet run --project src/AuralObservatory.SensorConsole [--csv <local-file.csv>]");
     return 2;
