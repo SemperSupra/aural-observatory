@@ -1,0 +1,54 @@
+name: R9 cross-engine OS desktop browser qualification
+on:
+  pull_request:
+    paths:
+      - 'src/AuralObservatory.SearchDesktop/**'
+      - 'tests/desktop-e2e/**'
+      - '.github/workflows/desktop-browser-matrix.yml'
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  browser:
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            engine: chromium
+          - os: ubuntu-24.04
+            engine: firefox
+          - os: windows-2025
+            engine: msedge
+          - os: macos-26
+            engine: webkit
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
+        with: {dotnet-version: '10.0.x'}
+      - name: Pinned browser and accessibility test dependencies
+        working-directory: tests/desktop-e2e
+        run: npm install --no-audit --no-fund
+      - name: Linux browser and OS dependencies
+        if: runner.os == 'Linux'
+        working-directory: tests/desktop-e2e
+        run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Windows/macOS browser engine
+        if: runner.os != 'Linux'
+        working-directory: tests/desktop-e2e
+        run: npx playwright install ${{ matrix.engine }}
+      - name: Test installed C# UI contract in real browser, synthetic-only
+        working-directory: tests/desktop-e2e
+        env:
+          AURAL_BROWSER: ${{ matrix.engine }}
+          AURAL_NO_BROWSER: '1'
+        run: npm test
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r9-cross-engine-ui-${{ matrix.os }}-${{ matrix.engine }}
+          path: artifacts/ui/desktop-browser-smoke.json
+          retention-days: 14
+          if-no-files-found: warn
