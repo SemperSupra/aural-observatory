@@ -23,6 +23,12 @@ public sealed class BleHeartRateSensor : IPhysiologicalSensor
     private GattCharacteristic? _characteristic;
     private Channel<HeartRateObservation>? _channel;
     private readonly SemaphoreSlim _lifecycle = new(1, 1);
+    private readonly Func<CancellationToken, Task<BluetoothDevice?>>? _deviceSelector;
+
+    public BleHeartRateSensor(Func<CancellationToken, Task<BluetoothDevice?>>? deviceSelector = null)
+    {
+        _deviceSelector = deviceSelector;
+    }
     private long _sequence, _invalid, _dropped;
     private bool _disposed;
 
@@ -38,7 +44,9 @@ public sealed class BleHeartRateSensor : IPhysiologicalSensor
             var options = new RequestDeviceOptions { Timeout = TimeSpan.FromSeconds(15) };
             options.Filters.Add(new BluetoothLEScanFilter { Services = { GattServiceUuids.HeartRate } });
             // Platforms implement their own selection UI/scan; the user must authorize the connection.
-            var device = await Bluetooth.RequestDeviceAsync(options).WaitAsync(cancellationToken).ConfigureAwait(false);
+            var device = _deviceSelector is null
+                ? await Bluetooth.RequestDeviceAsync(options).WaitAsync(cancellationToken).ConfigureAwait(false)
+                : await _deviceSelector(cancellationToken).WaitAsync(cancellationToken).ConfigureAwait(false);
             if (device is null) throw new OperationCanceledException("No Bluetooth heart-rate sensor selected.");
             _device = device;
             DeviceName = string.IsNullOrWhiteSpace(device.Name) ? "BLE heart-rate sensor" : device.Name;

@@ -69,6 +69,19 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Pin Xcode compatible with .NET macOS workload
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d /Applications/Xcode_26.0.1.app ]; then
+            sudo xcode-select --switch /Applications/Xcode_26.0.1.app/Contents/Developer
+          elif [ -d /Applications/Xcode_26.0.app ]; then
+            sudo xcode-select --switch /Applications/Xcode_26.0.app/Contents/Developer
+          else
+            echo 'Required Xcode 26.0 not installed; do not bypass SDK version validation.' >&2
+            exit 1
+          fi
+          xcodebuild -version
       - name: Install macOS SDK workload
         run: dotnet workload install macos
       - run: dotnet build src/AuralObservatory.SensorConsole/AuralObservatory.SensorConsole.csproj --configuration Release
