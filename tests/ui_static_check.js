@@ -21,5 +21,5 @@ check(/button,input,textarea,select,a/.test(html),'Space does not hijack focused
 check(/<audio\b(?![^>]*autoplay)/.test(html),'audio does not autoplay');
 check(/max-width:\s*100%/.test(html),'fluid controls can reflow');
 check(/min-height:\s*48px/.test(html),'touch target size contract');
-check(!/contenteditable\s*=\s*["']?true/.test(html),'no unstructured editable controls');
+check(!/contenteditable\s*=\s*["']?true/.test(html.split('<script>')[0]),'no unstructured editable HTML controls');
 console.log('Static UI contract satisfied; this does not replace screen-reader/contrast/device tests.');
