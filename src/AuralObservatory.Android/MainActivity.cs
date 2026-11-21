@@ -12,6 +12,7 @@ using Android.Views;
 using Android.Views.InputMethods;
 using Android.Widget;
 using Android.Graphics;
+using Path = System.IO.Path;
 using Android.Content.Res;
 using Android.Util;
 using System.Collections.Generic;
