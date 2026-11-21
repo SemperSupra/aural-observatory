@@ -4,9 +4,11 @@ const html = fs.readFileSync('src/AuralObservatory.SearchDesktop/wwwroot/index.h
 const check = (ok,msg) => { if(!ok)throw Error('FAIL '+msg); console.log('PASS '+msg); };
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 check(new Set(ids).size === ids.length,'all desktop DOM IDs unique');
-const required = ['theme','font-family','font-size','high-contrast','reduce-motion','mode','quiet',
+const required = ['left-hz','left-gain','left-width','left-colour','left-notch','right-hz','right-gain','right-width','right-colour','right-notch','modulation-hz','modulation-depth','save-audio','audio-config-status','theme','font-family','font-size','high-contrast','reduce-motion','mode','quiet',
 'status','prefs-status','preset-name','presets','export-prefs','import-prefs','reset-search'];
-check(required.every(id=>ids.includes(id)),'all accessibility/appearance/profile controls present');
+check(required.every(id=>ids.includes(id)),'all accessibility/appearance/profile and ear-editing controls present');
+check(html.includes('getEditorStimulus()')&&html.includes('persistPreferences()'),'per-ear stimulus participates in durable preference/preset capture');
+check(html.includes('numericField(')&&html.includes('aria-invalid'),'numeric validation emits accessible errors');
 check(/<html\b[^>]*\blang="en"/.test(html),'document language explicit');
 check(/href="#content"[^>]*class="skip"/.test(html),'keyboard skip link present');
 check(/id="content"[^>]*tabindex="-1"/.test(html),'skip destination focusable');
