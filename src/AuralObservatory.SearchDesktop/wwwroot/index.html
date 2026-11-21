@@ -12,12 +12,39 @@ label{display:block;margin:.6rem 0}button{background:var(--accent);color:var(--a
 small,.muted{color:var(--muted)}textarea{width:100%;min-height:85px}#status{white-space:pre-line}#font-size{width:100%;max-width:360px}.skip{position:absolute;left:-9999px;top:0}.skip:focus{left:10px;background:var(--panel);z-index:3;padding:.7rem}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:1rem}.grid>*{min-width:0}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+fieldset{min-width:0;border:1px solid var(--border);border-radius:.6rem;padding:.85rem}legend{font-weight:600;padding:0 .4rem}fieldset input[type=number],fieldset select{width:100%}#configuration .grid{align-items:start}
 </style></head>
 <body><a href="#content" class="skip">Skip to the research controls</a>
 <header><h1>Aural Observatory · Quiet Search</h1>
-<nav aria-label="Sections"><a href="#experiment">Explore</a><a href="#feedback">Feedback</a><a href="#appearance">Appearance and presets</a></nav></header>
+<nav aria-label="Sections"><a href="#configuration">Configure</a><a href="#experiment">Explore</a><a href="#feedback">Feedback</a><a href="#appearance">Appearance and presets</a></nav></header>
 <main id="content" tabindex="-1">
 <p>Research tool, not medical treatment. Begin at a low device volume. Generated PCM level is not headphone SPL. This search <strong>never raises gain</strong>.</p>
+<section id="configuration" aria-labelledby="configure-title">
+<h2 id="configure-title">Configure sound for each ear</h2>
+<p>Profiles change only future trials; the active trial is frozen. These numeric values are relative digital settings, <strong>not measured sound pressure</strong>.</p>
+<div class="grid">
+<fieldset><legend>Left ear</legend>
+<label for="left-hz">Notch center (Hz)</label><input type="number" inputmode="decimal" id="left-hz" min="200" max="10000" step="any" value="4000">
+<label for="left-gain">Gain fraction (0–1)</label><input type="number" inputmode="decimal" id="left-gain" min="0" max="1" step="0.01" value="0.6">
+<label for="left-width">Notch width (octaves)</label><input type="number" inputmode="decimal" id="left-width" min="0.1" max="2" step="0.1" value="1">
+<label for="left-colour">Noise spectrum</label><select id="left-colour"><option value="0">White</option><option value="1">Pink</option><option value="2">Brown</option><option value="3">Blue (legacy)</option><option value="4">Violet (legacy)</option></select>
+<label><input id="left-notch" type="checkbox" checked> Apply notch on left</label>
+</fieldset>
+<fieldset><legend>Right ear</legend>
+<label for="right-hz">Notch center (Hz)</label><input type="number" inputmode="decimal" id="right-hz" min="200" max="10000" step="any" value="6000">
+<label for="right-gain">Gain fraction (0–1)</label><input type="number" inputmode="decimal" id="right-gain" min="0" max="1" step="0.01" value="0.6">
+<label for="right-width">Notch width (octaves)</label><input type="number" inputmode="decimal" id="right-width" min="0.1" max="2" step="0.1" value="1">
+<label for="right-colour">Noise spectrum</label><select id="right-colour"><option value="0">White</option><option value="1">Pink</option><option value="2">Brown</option><option value="3">Blue (legacy)</option><option value="4">Violet (legacy)</option></select>
+<label><input id="right-notch" type="checkbox" checked> Apply notch on right</label>
+</fieldset>
+</div>
+<div class="grid">
+<label>Amplitude modulation (Hz, 0–20) <input id="modulation-hz" type="number" inputmode="decimal" min="0" max="20" step="0.1" value="0"></label>
+<label>Modulation depth (0–0.9) <input id="modulation-depth" type="number" inputmode="decimal" min="0" max="0.9" step="0.05" value="0"></label>
+</div>
+<button id="save-audio">Save sound profile for next trial</button>
+<p id="audio-config-status" role="status" aria-live="polite">No sound configuration changes saved in this session.</p>
+</section>
 <section id="experiment" aria-labelledby="experiment-title"><h2 id="experiment-title">1. Explore fixed-level sound trials</h2><p id="status" role="status" aria-live="polite">Ready. Each trial plays for 15 seconds. Press and hold during perceived quiet; continue holding after playback if tinnitus remains reduced.</p>
 <button id="next">Start / next trial</button> <button id="stop">Stop</button> <button id="reset-search">New search (retain observations)</button>
 <audio id="sound" preload="auto"></audio>
@@ -131,6 +158,57 @@ function appearance(){
 }
 for(const item of [theme,fontFamily,fontSize,highContrast,reduceMotion])item.addEventListener('change',appearance);
 darkQuery.addEventListener?.('change',appearance);
+function numericField(id,min,max){
+ const node=document.getElementById(id);
+ const x=Number(node.value);
+ if(node.value.trim()===''||!Number.isFinite(x)||x<min||x>max){
+  node.setAttribute('aria-invalid','true');node.focus();
+  throw Error(id.replaceAll('-',' ')+' must be between '+min+' and '+max);
+ }
+ node.removeAttribute('aria-invalid');return x;
+}
+function earFields(prefix){
+ return {
+  frequencyHz:numericField(prefix+'-hz',200,10000),
+  gain:numericField(prefix+'-gain',0,1),
+  notchWidthOctaves:numericField(prefix+'-width',0.1,2),
+  colour:Number(document.getElementById(prefix+'-colour').value),
+  notchEnabled:document.getElementById(prefix+'-notch').checked
+ };
+}
+function getEditorStimulus(){
+ const old=prefs.lastStimulus;
+ return {...old,left:earFields('left'),right:earFields('right'),
+  modulationHz:numericField('modulation-hz',0,20),
+  modulationDepth:numericField('modulation-depth',0,0.9)};
+}
+function putEditorStimulus(s){
+ for(const side of ['left','right']){
+  const ear=s[side];
+  document.getElementById(side+'-hz').value=ear.frequencyHz;
+  document.getElementById(side+'-gain').value=ear.gain;
+  document.getElementById(side+'-width').value=ear.notchWidthOctaves;
+  document.getElementById(side+'-colour').value=String(ear.colour);
+  document.getElementById(side+'-notch').checked=ear.notchEnabled;
+ }
+ document.querySelector('#modulation-hz').value=s.modulationHz;
+ document.querySelector('#modulation-depth').value=s.modulationDepth;
+}
+function gatherPreferences(){
+ if(!prefs)throw Error('Settings have not loaded.');
+ return {...prefs,appearance:Number(theme.value),fontFamily:Number(fontFamily.value),
+  fontScalePercent:Number(fontSize.value),highContrast:highContrast.checked,
+  reduceMotion:reduceMotion.checked,
+  responseMode:['HoldWhenQuiet','ReleaseWhenQuiet','ToggleQuiet'].indexOf(mode.value),
+  lastStimulus:getEditorStimulus()};
+}
+async function persistPreferences(){
+ const next=gatherPreferences();
+ await api('preferences',next);
+ prefs=next;
+ document.getElementById('audio-config-status').textContent=
+  'Profile saved. Start a new search to apply it if the previous search has already begun.';
+}
 function renderPreferences(){
  if(!prefs)return;
  theme.value=String(prefs.appearance);
@@ -140,7 +218,8 @@ function renderPreferences(){
  reduceMotion.checked=!!prefs.reduceMotion;
  mode.value=['HoldWhenQuiet','ReleaseWhenQuiet','ToggleQuiet'][prefs.responseMode]||'HoldWhenQuiet';
  resetInput();appearance();
- presetSelect.replaceChildren(new Option('Choose a saved preset',''));
+ putEditorStimulus(prefs.lastStimulus);
+  presetSelect.replaceChildren(new Option('Choose a saved preset',''));
  for(const p of prefs.presets||[])presetSelect.add(new Option(p.name,p.name));
 }
 async function reloadPreferences(){
@@ -152,18 +231,17 @@ async function reloadPreferences(){
  }catch(e){prefsStatus.textContent='Preferences unavailable: '+e.message;}
 }
 document.querySelector('#save-prefs').addEventListener('click',async()=>{
- if(!prefs)return;
- prefs.appearance=Number(theme.value);prefs.fontFamily=Number(fontFamily.value);
- prefs.fontScalePercent=Number(fontSize.value);prefs.highContrast=highContrast.checked;
- prefs.reduceMotion=reduceMotion.checked;
- prefs.responseMode=['HoldWhenQuiet','ReleaseWhenQuiet','ToggleQuiet'].indexOf(mode.value);
- try{await api('preferences',prefs);prefsStatus.textContent='Preferences saved to your user profile.';}
+ try{await persistPreferences();prefsStatus.textContent='Appearance, response style and sound settings saved.';}
  catch(e){prefsStatus.textContent='Could not save preferences: '+e.message;}
+});
+document.querySelector('#save-audio').addEventListener('click',async()=>{
+ try{await persistPreferences();}
+ catch(e){document.getElementById('audio-config-status').textContent='Cannot save: '+e.message;}
 });
 document.querySelector('#save-preset').addEventListener('click',async()=>{
  const name=document.querySelector('#preset-name').value.trim();
  if(!name)return prefsStatus.textContent='Enter a preset name.';
- try{await api('preset',{name});await reloadPreferences();prefsStatus.textContent='Named preset saved.';}
+ try{await persistPreferences();await api('preset',{name});await reloadPreferences();prefsStatus.textContent='Named preset saved with the currently edited left/right sound settings.';}
  catch(e){prefsStatus.textContent='Preset not saved: '+e.message;}
 });
 document.querySelector('#load-preset').addEventListener('click',async()=>{
