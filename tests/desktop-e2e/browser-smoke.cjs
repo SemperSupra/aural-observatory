@@ -2,7 +2,7 @@
 'use strict';
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
-const { chromium } = require('playwright');
+const { chromium, firefox, webkit } = require('playwright');
 const AxeBuilder = require('@axe-core/playwright').default;
 const fs = require('node:fs');
 const path = require('node:path');
@@ -28,7 +28,13 @@ async function ready(){
 }
 async function run(){
  const address=await ready();
- browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ const engine=process.env.AURAL_BROWSER||'chromium';
+ if(!['chromium','firefox','webkit','msedge'].includes(engine))throw Error('Unsupported browser engine '+engine);
+ const browserType=engine==='firefox'?firefox:engine==='webkit'?webkit:chromium;
+ const options={headless:true};
+ if(engine==='msedge')options.channel='msedge';
+ if(engine==='chromium'&&process.platform==='linux')options.args=['--no-sandbox'];
+ browser=await browserType.launch(options);
  const context=await browser.newContext({viewport:{width:1200,height:800},colorScheme:'light',reducedMotion:'reduce'});
  const page=await context.newPage();
  const fatal=[];
@@ -88,7 +94,7 @@ async function run(){
  const critical=report.violations.filter(v=>v.impact==='critical'||v.impact==='serious');
  assert.deepEqual(critical.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.length})),[],'No serious/critical automated accessibility violations');
  assert.deepEqual(fatal,[],'No uncaught page errors');
- const evidence={schemaVersion:1,scope:'synthetic desktop browser',browser:'Chromium headless',
+ const evidence={schemaVersion:1,scope:'synthetic desktop browser',browser:(process.env.AURAL_BROWSER||'chromium')+' headless',
    platform:process.platform,at:new Date().toISOString(),checks:['ear-editor','input-bounds','corrected-noise-selection','theme','scale','contrast','persist','presets','320px-reflow','axe-automated-WCAG21'],
    automatedViolations:report.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.length})),
    manualScreenReaderVerified:false,physicalAudioVerified:false};
