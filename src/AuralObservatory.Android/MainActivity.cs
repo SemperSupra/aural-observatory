@@ -107,8 +107,10 @@ public sealed class MainActivity : Activity
         {
             if (e.Event is null) return;
             if (e.Event.ActionMasked == MotionEventActions.Down) { QuietButton(true); e.Handled = true; }
-            else if (e.Event.ActionMasked is MotionEventActions.Up or MotionEventActions.Cancel)
+            else if (e.Event.ActionMasked == MotionEventActions.Up)
             { QuietButton(false); e.Handled = true; }
+            else if (e.Event.ActionMasked == MotionEventActions.Cancel)
+            { if (_search?.State is SearchState.Stimulating or SearchState.PostStimulus) _search.MarkQuiet(false, QuietSearch.NowSeconds()); _quietInput.Cancel(); e.Handled = true; }
         };
         _voiceNote = new EditText(this) { Hint = "Optional note, or dictate after playback" };
         layout.AddView(_voiceNote);
@@ -311,7 +313,7 @@ public sealed class MainActivity : Activity
             result.AfterQuietSeconds.ToString("F3", CultureInfo.InvariantCulture),
             result.Interrupted, _quietInput.Mode, result.LoudnessAfter?.ToString(CultureInfo.InvariantCulture) ?? "",
             "\"" + (result.Note ?? "").Replace("\"", "\"\"").Replace("\r", " ").Replace("\n", " ") + "\"");
-        string file = Path.Combine(FilesDir!.AbsolutePath, "quiet_search.csv");
+        string file = Path.Combine(FilesDir!.AbsolutePath, "quiet_search_r7.csv");
         if (!File.Exists(file)) File.WriteAllText(file, "timestamp_utc,trial,hz,stage,control,during_quiet_s,after_quiet_s,interrupted,input_mode,loudness_after,note\n");
         File.AppendAllText(file, line + "\n");
         _voiceNote.Text = ""; _after.Text = "";
