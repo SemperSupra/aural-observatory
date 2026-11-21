@@ -7,6 +7,13 @@ var active=new ExperimentArm("A","notch-legacy-v1",new string('a',64),.06);
 var control=new ExperimentArm("B","control-no-notch-legacy-v1",new string('b',64),.06);
 var protocol=new ExperimentProtocol(1,"synthetic-n1-r8","poststimulus_loudness_0_10",
  "active_minus_control",41,24,15,30,120,active,control);
+var loaded=JsonSerializer.Deserialize<ExperimentProtocol>(
+    System.IO.File.ReadAllText("examples/synthetic-r8-n1-protocol.json"),
+    new JsonSerializerOptions{PropertyNameCaseInsensitive=true})
+    ?? throw new Exception("Missing protocol fixture");
+ExperimentPlanner.Validate(loaded);
+Check(loaded.Pairs==protocol.Pairs && loaded.Active.StimulusSha256.Length==64,
+ "versioned protocol fixture roundtrip");
 var first=ExperimentPlanner.Build(protocol);
 var again=ExperimentPlanner.Build(protocol);
 Check(first.SequenceEqual(again),"preregistered randomization deterministic");
