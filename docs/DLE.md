@@ -58,3 +58,9 @@ G1 before distributing an APK; G2/G3 before prolonged listening. G4 independent 
 - Private Android and Windows Foundry repositories retain governance, eligibility and release controls. Public product/Foundry planes own reusable build mechanics; no private or personal input data in public CI.
 - G7 status: synthetic build/test and installer compilation PENDING; on-device BLE/ANT+ acquisition, acoustic validation, Windows install/uninstall, signing and production publishing NOT COMPLETE.
 - Authority and acceptance: docs/QUIET-MODES-AND-PACKAGING-R7.md, public PR for this branch, runner census SemperSupra/agent-dispatch-private#223/#281.
+
+## R8-B — platform UI/UX/DX and durable preferences
+- Owner PR: #10 (draft). Human: Android native journey sections and settings; desktop accessible local-browser UI. System/light/dark, font scale/family, high contrast, reduce motion setting, status live regions, focus/keyboard/switch-click affordances; real assistive-device testing pending.
+- `UserPreferencesStore`: versioned JSON v1 stored outside installation, atomic update, presets (up to 50), schema validation, fail-closed for future/invalid documents. Desktop session-token APIs and Android on-device profile file. Android uninstall still deletes app data; export/import/backup/migration proof pending.
+- Automation/agents: pure typed core, source-controlled portable CI, machine-parseable profile JSON; no privileges to start sound or export private biometric data.
+- Synthetic public Windows/Linux/macOS profile tests, JS syntax and Android native compilation in workflow `ui-preferences.yml`; CI status pending. Real TalkBack/NVDA/VoiceOver/Orca, 200–400% zoom, switch access, hearing-aid output and device change remain hard qualification gates. Full review in `docs/UI-UX-DX-R8-AUDIT.md`.
