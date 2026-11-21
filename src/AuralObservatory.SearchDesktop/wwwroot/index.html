@@ -83,6 +83,7 @@ const api = async (url, data) => { const r = await fetch('/api/'+url,{method:'PO
 const status=document.querySelector('#status'),audio=document.querySelector('#sound'),hold=document.querySelector('#quiet');
 const mode=document.querySelector('#mode');
 let down=false, quiet=false, armed=false, active=false, post=false;
+let activeAudioBlobUrl=null;
 function msg(x){status.textContent=x;}
 function resetInput(){down=false;quiet=false;armed=false;keyboardQuietHeld=false;hold.classList.remove('down');hold.textContent=mode.value==='ReleaseWhenQuiet'?'HOLD WHILE AUDIBLE; RELEASE WHEN QUIET':mode.value==='ToggleQuiet'?'TAP WHEN QUIET (TOGGLE)':'PRESS AND HOLD WHEN QUIET';}
 function updateLabel(){hold.classList.toggle('down',quiet);hold.textContent=mode.value==='ReleaseWhenQuiet'?(down?'AUDIBLE — RELEASE WHEN QUIET':'RELEASED — QUIET MARK ACTIVE'):mode.value==='ToggleQuiet'?(quiet?'QUIET ACTIVE — TAP TO END':'TAP WHEN QUIET (TOGGLE)'):(quiet?'QUIET ACTIVE — RELEASE TO END':'PRESS AND HOLD WHEN QUIET');}
@@ -125,19 +126,23 @@ async function annotate(){const value=document.querySelector('#loudness').value;
 document.querySelector('#save').onclick=async()=>{try{await annotate();msg('Annotation saved to current trial; it will persist when you advance.')}catch(e){msg(e.message)}};
 document.querySelector('#next').onclick=async()=>{try{await annotate();const trial=await api('next',{mode:mode.value});if(trial.finished){active=false;post=false;msg('Frequency sweep complete. Review observations and repeat sessions to assess reproducibility.');return;}
   document.querySelector('#note').value='';document.querySelector('#loudness').value='';active=true;post=false;mode.disabled=true;resetInput();
-  audio.src=trial.source+'?token='+token; // token is checked by endpoint below
+  const wav=await fetch(trial.source,{headers:{'X-Aural-Token':token}});
+  if(!wav.ok)throw Error('Could not fetch authorized local audio: '+wav.status);
+  if(activeAudioBlobUrl)URL.revokeObjectURL(activeAudioBlobUrl);
+  activeAudioBlobUrl=URL.createObjectURL(await wav.blob());
+  audio.src=activeAudioBlobUrl; // No session token in a media URL, history, or referrer.
   msg(`Trial ${trial.trial}: ${trial.hz.toFixed(0)} Hz, stage ${trial.stage}. Fixed level. Input: ${mode.value}.`);
   await audio.play();
 }catch(e){msg('Could not start: '+e.message);}};
 audio.addEventListener('ended',async()=>{active=false;post=true;await api('ended');resetInput();msg('Stimulus stopped: re-arm your selected input mode to mark post-sound quiet. Observe at least 10 seconds.');});
-document.querySelector('#stop').onclick=async()=>{audio.pause();audio.currentTime=0;active=false;post=false;resetInput();mode.disabled=false;await api('interrupt');msg('Stopped. Incomplete trial excluded from ranking.');};
+document.querySelector('#stop').onclick=async()=>{audio.pause();audio.currentTime=0;if(activeAudioBlobUrl){URL.revokeObjectURL(activeAudioBlobUrl);activeAudioBlobUrl=null;}active=false;post=false;resetInput();mode.disabled=false;await api('interrupt');msg('Stopped. Incomplete trial excluded from ranking.');};
 document.querySelector('#reset-search').onclick=async()=>{
  try{await api('reset');active=false;post=false;resetInput();mode.disabled=false;
  msg('New search ready. Previous observations retained; saved audio profile will apply.');}
  catch(e){msg('Could not reset: '+e.message);}
 };
 document.querySelector('#exit-app').addEventListener('click',async()=>{
- audio.pause();try{await api('exit');msg('Desktop session stopping; you may close this tab.');}
+ audio.pause();if(activeAudioBlobUrl){URL.revokeObjectURL(activeAudioBlobUrl);activeAudioBlobUrl=null;}try{await api('exit');msg('Desktop session stopping; you may close this tab.');}
  catch(e){msg('Session may have stopped. Close this tab or check the host console.');}
 });
 document.querySelector('#export').onclick=async()=>{const r=await fetch('/api/export',{headers:{'X-Aural-Token':token}});const txt=await r.text();const blob=new Blob([txt],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='aural-quiet-search.csv';a.click();URL.revokeObjectURL(a.href);};

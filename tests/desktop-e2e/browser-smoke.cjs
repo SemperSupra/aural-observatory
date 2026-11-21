@@ -2,6 +2,7 @@
 'use strict';
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
+const http = require('node:http');
 const { chromium } = require('playwright');
 const AxeBuilder = require('@axe-core/playwright').default;
 const fs = require('node:fs');
@@ -28,6 +29,23 @@ async function ready(){
 }
 async function run(){
  const address=await ready();
+ const denied=await fetch(new URL('/api/export',address));
+ assert.equal(denied.status,403,'Local API must require session token header');
+ const spoofedHost=await new Promise((resolve,reject)=>{
+  const r=http.get(address,{headers:{Host:'attacker.example'}},res=>{
+   res.resume();res.on('end',()=>resolve(res.statusCode));});
+  r.on('error',reject);
+ });
+ assert.equal(spoofedHost,403,'Rebinding Host must be blocked');
+ const root=await fetch(address);
+ assert.match(root.headers.get('content-security-policy')||'',/frame-ancestors 'none'/);
+ assert.equal(root.headers.get('referrer-policy'),'no-referrer');
+ const pageHTML=await root.text();
+ const sessionMatch=pageHTML.match(/const token = '([A-Fa-f0-9]{64})';/);
+ assert.ok(sessionMatch,'Expected session-bound token within local HTML');
+ const deniedOrigin=await fetch(new URL('/api/preferences',address),{headers:{
+  'X-Aural-Token':sessionMatch[1],Origin:'http://attacker.example'}});
+ assert.equal(deniedOrigin.status,403,'Foreign origin must be rejected');
  browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  const context=await browser.newContext({viewport:{width:1200,height:800},colorScheme:'light',reducedMotion:'reduce'});
  const page=await context.newPage();
@@ -89,7 +107,7 @@ async function run(){
  assert.deepEqual(critical.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.length})),[],'No serious/critical automated accessibility violations');
  assert.deepEqual(fatal,[],'No uncaught page errors');
  const evidence={schemaVersion:1,scope:'synthetic desktop browser',browser:'Chromium headless',
-   platform:process.platform,at:new Date().toISOString(),checks:['ear-editor','input-bounds','corrected-noise-selection','theme','scale','contrast','persist','presets','320px-reflow','axe-automated-WCAG21'],
+   platform:process.platform,at:new Date().toISOString(),checks:['ear-editor','input-bounds','corrected-noise-selection','theme','scale','contrast','persist','presets','320px-reflow','axe-automated-WCAG21','local-host-origin-CSP-and-token'],
    automatedViolations:report.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.length})),
    manualScreenReaderVerified:false,physicalAudioVerified:false};
  const target=path.join(repo,'artifacts','ui');
