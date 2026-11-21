@@ -33,14 +33,12 @@ async function run(){
  const fatal=[];
  page.on('pageerror',e=>fatal.push(e.message));
  await page.goto(address,{waitUntil:'domcontentloaded'});
- await page.locator('#prefs-status').getByText?.('Settings loaded').catch(()=>{});
  await page.waitForFunction(()=>document.querySelector('#prefs-status').textContent.includes('Settings loaded'),null,{timeout:10000});
  assert.match(await page.locator('body').innerText(),/not medical treatment/i);
  assert.equal(await page.locator('audio').evaluate(x=>x.autoplay),false);
  await page.locator('#theme').selectOption('2');
  assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
- await page.locator('#font-size').fill('150');
- await page.locator('#font-size').dispatchEvent('change');
+ await page.locator('#font-size').evaluate(x=>{x.value='150';x.dispatchEvent(new Event('change',{bubbles:true}));});
  assert.equal(await page.locator('html').evaluate(x=>x.style.fontSize),'150%');
  await page.locator('#high-contrast').check();
  assert.equal(await page.locator('html').getAttribute('data-contrast'),'high');
