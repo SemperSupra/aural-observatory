@@ -10,9 +10,11 @@ try
     Assert(first is not null,"first session acquired");
     var concurrent=DesktopSession.TryAcquire(dir);
     Assert(concurrent is null,"concurrent process session rejected");
-    Assert(DesktopSession.ShouldLaunchBrowser(Array.Empty<string>(),_=>"1")==false
-      || OperatingSystem.IsWindows() || OperatingSystem.IsMacOS(),
-      "headless environment guard where supported");
+    Assert(DesktopSession.ShouldLaunchBrowser(Array.Empty<string>(),key=>key=="DISPLAY"?"1":null),
+      "GUI environment allows default browser launch");
+    if(OperatingSystem.IsLinux())
+      Assert(!DesktopSession.ShouldLaunchBrowser(Array.Empty<string>(),_=>null),
+        "headless Linux never attempts browser launch");
     Assert(!DesktopSession.ShouldLaunchBrowser(new[]{"--no-browser"},_=>null),"headless CLI switch");
     Assert(!DesktopSession.ShouldLaunchBrowser(Array.Empty<string>(),key=>key=="AURAL_NO_BROWSER"?"1":null),
       "explicit environment opt out");
