@@ -39,7 +39,7 @@ See `docs/HARDWARE-AND-EVIDENCE.md` and `docs/DLE.md`.
 ## Verification
 
 - Core code and Android bindings reviewed against the documented .NET/Android APIs.
-- The authoring runtime lacks .NET and Android workloads, so **compilation, APK installation, listening, and real sensor tests remain unverified** until CI succeeds and devices are tested. A GitHub Actions workflow is supplied to run builds; do not treat workflow existence as a green check.
+- **CI compiler/test gate PASSED:** https://github.com/SemperSupra/aural-observatory/actions/runs/44928818567 passed C# core tests on Windows/macOS/Linux and built a debug-signed Android APK. **Installation and playback on physical devices, acoustic output/SPL, and real sensor tests are still unverified.**
 - Prior v0.3 PWA/desktop code is retained as a separate baseline package, not silently imported into the native runtime. Cross-engine parity has not been established.
 
 ## License
