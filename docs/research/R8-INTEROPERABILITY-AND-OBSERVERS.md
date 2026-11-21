@@ -19,7 +19,7 @@
 - Vendor refs: https://www.resound.com/en/help/compatibility ; https://www.resound.com/en/help/apps/smart-3d ; https://play.google.com/store/apps/details?id=dk.resound.smart3d .
 
 ## Project name TinEar
-- Web queries (2026-11-21) did not find a confidently established, currently distributed tinnitus app named exactly 'TinEar'; that does *not* prove the name is available.
+- Targeted name search (2026-11-21) did not find a confidently established current tinnitus app named exactly 'TinEar', **but** the American QRP Club has an existing TinEar radio receiver kit (https://amqrp.org/tinear-receiver-kit/) and German records include a dissolved 'Tinear GmbH' (https://www.online-handelsregister.de/handelsregisterauszug/nw/Duesseldorf/HRB/73690/Tinear-GmbH). This constitutes a known name-use collision, not proof that naming or trademark use is barred.
 - Historical 'TIN EAR' trademark filings exist, and many related products named MindEar, Tinnitracks, Tinnara and similar exist. Complete EUIPO/DPMA/USPTO trademark and app-store/domain/name checks are still needed before launch.
 - Keep public project name **Aural Observatory** and app **TinnitusLab** pending qualified naming/legal review.
 
