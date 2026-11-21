@@ -58,12 +58,35 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./scripts/Test-WindowsCandidate.ps1 -Installer 'artifacts/AuralObservatory-SearchDesktop-Setup-Candidate.exe'
-      - name: Linux/macOS archive
+      - name: Linux/macOS archive and platform-native launcher candidates
         if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p artifacts
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            bash -n packaging/linux/install-user.sh packaging/linux/uninstall-user.sh
+            cp packaging/linux/install-user.sh packaging/linux/uninstall-user.sh publish/linux-x64/
+            chmod +x publish/linux-x64/install-user.sh publish/linux-x64/uninstall-user.sh
+            isolated=$(mktemp -d)
+            trap 'rm -rf "$isolated"' EXIT
+            HOME="$isolated" XDG_DATA_HOME="$isolated/share" bash packaging/linux/install-user.sh publish/linux-x64
+            test -x "$isolated/.local/opt/aural-observatory/AuralObservatory.SearchDesktop"
+            test -f "$isolated/share/applications/org.sempersupra.auralobservatory.desktop"
+            HOME="$isolated" XDG_DATA_HOME="$isolated/share" bash packaging/linux/uninstall-user.sh
+            test ! -e "$isolated/.local/opt/aural-observatory/AuralObservatory.SearchDesktop"
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            /usr/bin/plutil -lint packaging/macos/Info.plist
+            app="artifacts/AuralObservatory.app"
+            mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/runtime"
+            cp packaging/macos/Info.plist "$app/Contents/Info.plist"
+            cp packaging/macos/launch.sh "$app/Contents/MacOS/AuralObservatory"
+            chmod +x "$app/Contents/MacOS/AuralObservatory"
+            cp -R publish/osx-arm64/. "$app/Contents/Resources/runtime/"
+            test -x "$app/Contents/Resources/runtime/AuralObservatory.SearchDesktop"
+            tar -czf artifacts/AuralObservatory-SearchDesktop-osx-arm64-app-candidate.tar.gz -C artifacts AuralObservatory.app
+            rm -rf "$app"
+          fi
           tar -czf "artifacts/AuralObservatory-SearchDesktop-${{ matrix.rid }}-candidate.tar.gz" -C "publish/${{ matrix.rid }}" .
           (cd artifacts && if command -v sha256sum >/dev/null; then sha256sum *.tar.gz; else shasum -a 256 *.tar.gz; fi) > artifacts/SHA256SUMS.txt
       - name: Upload immutable-run candidate files (NOT public release)
