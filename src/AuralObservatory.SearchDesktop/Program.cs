@@ -1,4 +1,7 @@
 using AuralObservatory.Core;
+using AuralObservatory.SearchDesktop;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using System.Text;
 using System.Text.Json;
 using System.Globalization;
@@ -7,12 +10,18 @@ using System.Net;
 
 // Local-only browser frontend, with native C# DSP. No browser-side sound synthesis or Internet access.
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls("http://127.0.0.1:8766");
+builder.WebHost.UseUrls("http://127.0.0.1:0"); // OS-selected ephemeral port; bound to local loopback only.
 var app = builder.Build();
 var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 var gate = new object();
 var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AuralObservatory");
 Directory.CreateDirectory(dataDir);
+using var desktopSession = DesktopSession.TryAcquire(dataDir);
+if(desktopSession is null)
+{
+    Console.Error.WriteLine("An Aural Observatory desktop session is already running for this OS user.");
+    return; // Never bind a competing session or overwrite user preferences.
+}
 var preferencesPath = Path.Combine(dataDir, "preferences-v1.json");
 UserPreferences preferences;
 try { preferences = UserPreferencesStore.ReadFile(preferencesPath); }
@@ -99,6 +108,12 @@ app.MapPost("/api/reset", () =>
         return Results.Ok(new {ready=true, priorObservationsRetained=true});
     }
 });
+app.MapPost("/api/exit", () =>
+{
+    // Only a token-authorized local page can reach this endpoint.
+    app.Lifetime.StopApplication();
+    return Results.Ok(new { stopping=true });
+});
 app.MapPost("/api/next", (ModeInput input) =>
 {
     lock (gate)
@@ -154,9 +169,18 @@ app.MapGet("/api/export", () =>
 {
     lock (gate) return Results.Text(File.Exists(logPath) ? File.ReadAllText(logPath) : "No observations yet", "text/plain");
 });
-Console.WriteLine("Aural Observatory local search: http://127.0.0.1:8766");
-Console.WriteLine("Local data directory: " + dataDir);
-await app.RunAsync();
+await app.StartAsync();
+var addresses=app.Services.GetRequiredService<IServer>().Features
+    .Get<IServerAddressesFeature>()?.Addresses;
+var assigned=addresses?.FirstOrDefault(a=>a.StartsWith("http://127.0.0.1:",StringComparison.Ordinal));
+if(assigned is null || !Uri.TryCreate(assigned,UriKind.Absolute,out var boundUrl) || boundUrl.Port==0)
+    throw new InvalidOperationException("Kestrel did not provide the actual loopback address.");
+Console.WriteLine("Aural Observatory local session: " + boundUrl.AbsoluteUri);
+Console.WriteLine("Local user data: " + dataDir);
+if(DesktopSession.ShouldLaunchBrowser(args,Environment.GetEnvironmentVariable))
+    DesktopSession.TryLaunchBrowser(boundUrl,Console.WriteLine);
+else Console.WriteLine("Browser launch disabled/unavailable; open the URL above manually.");
+await app.WaitForShutdownAsync();
 
 void Store(SearchResult result)
 {
