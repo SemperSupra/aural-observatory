@@ -89,6 +89,16 @@ app.MapPost("/api/preset/load", (PresetInput input) =>
         return Results.Ok(new { loaded=true, requiresFreshSearch = search.Results.Any() });
     }
 });
+app.MapPost("/api/reset", () =>
+{
+    lock(gate) {
+        if(search.State is SearchState.Stimulating or SearchState.PostStimulus)
+            return Results.Conflict(new { error = "Finish or stop the active trial before restarting" });
+        search = new QuietSearch(preferences.LastStimulus);
+        audio=Array.Empty<byte>(); currentAudioId++;
+        return Results.Ok(new {ready=true, priorObservationsRetained=true});
+    }
+});
 app.MapPost("/api/next", (ModeInput input) =>
 {
     lock (gate)
