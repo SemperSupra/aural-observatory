@@ -31,12 +31,17 @@ foreach (NoiseColour colour in Enum.GetValues<NoiseColour>())
     Check(without.peak <= StimulusValidation.DigitalPeakCeiling + 0.0001,
         $"{colour} digital peak bounded: {without.peak:F4} FS");
     Check(double.IsFinite(alpha), $"{colour} PSD slope finite");
+    if (colour is NoiseColour.BlueCorrected or NoiseColour.VioletCorrected)
+        Check(Math.Abs(alpha - (colour == NoiseColour.BlueCorrected ? -1.0 : -2.0)) < 0.55,
+            $"{colour} corrected PSD exponent within 0.55 of nominal: {alpha:F3}");
     results.Add(new {
         colour = colour.ToString(), sampleRateHz = sr, fftWindow = n, hannWindow = true,
         estimatedPsdExponent = alpha, expectedExponent = colour switch {
             NoiseColour.White => 0, NoiseColour.Pink => 1, NoiseColour.Brown => 2,
-            NoiseColour.Blue => -1, NoiseColour.Violet => -2, _ => 0
-        }, leftCenterAttenuationDb = attenuation, rightCenterAttenuationDb = rightNotchAttenuation,
+            NoiseColour.Blue => -1, NoiseColour.Violet => -2,
+            NoiseColour.BlueCorrected => -1, NoiseColour.VioletCorrected => -2, _ => 0
+        }, legacySpectralLabel = colour is NoiseColour.Blue or NoiseColour.Violet,
+        leftCenterAttenuationDb = attenuation, rightCenterAttenuationDb = rightNotchAttenuation,
         leftOffbandAttenuationDb = offband, peakFullScale = without.peak,
         leftRmsFullScale = Math.Sqrt(without.left.Select(x => x*x).Average()),
         rightRmsFullScale = Math.Sqrt(without.right.Select(x => x*x).Average()),
