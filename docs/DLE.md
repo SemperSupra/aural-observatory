@@ -69,3 +69,9 @@ G1 before distributing an APK; G2/G3 before prolonged listening. G4 independent 
 - Native Android Storage Access Framework explicit export/import of versioned JSON presets/settings (no broad storage permission); desktop browser JSON import/export; both reject malformed/currently unsupported schemas before overwriting. Portable user data remains outside desktop installer; Android app-private data remains tied to the app and is removed on uninstall. Debug signed test APK upgrades can require uninstall -> explicit export/import is the recovery path.
 - Added accessible explicit fresh-search action preserving observation CSVs; user must still verify interrupted-session recovery and complete schema migrations.
 - Added dependency-free JS/DOM static checks on public 3-platform CI, NOT a substitute for real TalkBack/VoiceOver/NVDA/Orca or calibrated headphone qualification. Current CI status pending; sources are review candidates only.
+
+### Desktop platform-specific UX parity: open issue #12
+- Desktop Windows/macOS/Linux binaries presently ship the same local-loopback HTML interface with C# engine; **not** separate native widget applications. Compiled source and static HTML audits are not OS-specific human UX/accessibility qualification.
+- Source audit identified global Space shortcut interfering with native interactive controls; restricted shortcut to non-interactive focused targets, and CI static test now guards that behavior.
+- Outstanding: desktop ear-setting editing and valid preset capture, single-instance/browser launch/lifecycle, native output routing and accessibility end-to-end on Edge/NVDA, Safari/VoiceOver, Firefox/Orca, app packaging conventions and opt-in BLE controls. No platform release claim until tested.
+- DLE owner: https://github.com/SemperSupra/aural-observatory/issues/12; current implementation PR #10. Hardware acoustic qualification remains independent HARD BLOCK.
