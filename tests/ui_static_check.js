@@ -1,0 +1,23 @@
+'use strict';
+const fs = require('fs');
+const html = fs.readFileSync('src/AuralObservatory.SearchDesktop/wwwroot/index.html','utf8');
+const check = (ok,msg) => { if(!ok)throw Error('FAIL '+msg); console.log('PASS '+msg); };
+const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
+check(new Set(ids).size === ids.length,'all desktop DOM IDs unique');
+const required = ['theme','font-family','font-size','high-contrast','reduce-motion','mode','quiet',
+'status','prefs-status','preset-name','presets','export-prefs','import-prefs','reset-search'];
+check(required.every(id=>ids.includes(id)),'all accessibility/appearance/profile controls present');
+check(/<html\b[^>]*\blang="en"/.test(html),'document language explicit');
+check(/href="#content"[^>]*class="skip"/.test(html),'keyboard skip link present');
+check(/id="content"[^>]*tabindex="-1"/.test(html),'skip destination focusable');
+check((html.match(/role="status"/g)||[]).length>=2,'status regions expose screen-reader announcements');
+check(/aria-live="polite"/.test(html),'noninterrupting status announcement');
+check(/:focus-visible/.test(html),'high-visibility focus style');
+check(/prefers-color-scheme:\s*dark/.test(html),'system appearance tracked');
+check(/prefers-reduced-motion:reduce/.test(html),'system reduced motion respected');
+check(/id="quiet"[^>]*aria-label/.test(html),'quiet button has usable accessible name');
+check(/<audio\b(?![^>]*autoplay)/.test(html),'audio does not autoplay');
+check(/max-width:\s*100%/.test(html),'fluid controls can reflow');
+check(/min-height:\s*48px/.test(html),'touch target size contract');
+check(!/contenteditable\s*=\s*["']?true/.test(html),'no unstructured editable controls');
+console.log('Static UI contract satisfied; this does not replace screen-reader/contrast/device tests.');
