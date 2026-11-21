@@ -1,0 +1,15 @@
+{
+  "schemaVersion":1,
+  "experimentId":"synthetic-r8-paired-study",
+  "primaryOutcome":"poststimulus_loudness_0_10",
+  "primaryContrast":"active_minus_control",
+  "randomSeed":41,
+  "pairs":24,
+  "stimulusDurationSeconds":15,
+  "postStimulusSeconds":30,
+  "washoutSeconds":120,
+  "automaticallyAdjustGain":false,
+  "frozenProtocolSha256":null,
+  "active":{"id":"A","algorithmId":"notch-legacy-v1","stimulusSha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","digitalCeiling":0.06},
+  "control":{"id":"B","algorithmId":"no-notch-legacy-v1","stimulusSha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","digitalCeiling":0.06}
+}
