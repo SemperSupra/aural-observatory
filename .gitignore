@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+*.user
+*.suo
+*.keystore
+*.jks
+*.p12
+local.properties
+*.csv
+*.jsonl
