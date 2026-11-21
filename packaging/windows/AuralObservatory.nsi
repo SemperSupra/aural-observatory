@@ -3,7 +3,10 @@ Name "Aural Observatory Search Desktop"
 !ifndef PRODUCT_DIR
   !error "PRODUCT_DIR must point to a prebuilt, reviewed self-contained dotnet publish directory"
 !endif
-OutFile "artifacts\\AuralObservatory-SearchDesktop-Setup-Candidate.exe"
+!ifndef OUTPUT_FILE
+  !error "OUTPUT_FILE must point to a staging path"
+!endif
+OutFile "${OUTPUT_FILE}"
 InstallDir "$LOCALAPPDATA\\Programs\\AuralObservatory"
 RequestExecutionLevel user
 ShowInstDetails show
