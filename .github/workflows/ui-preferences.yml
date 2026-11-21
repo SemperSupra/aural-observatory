@@ -29,7 +29,7 @@ jobs:
       - name: Parse actual desktop inline JavaScript
         shell: bash
         run: |
-          node -e "const fs=require('fs'),vm=require('vm');const t=fs.readFileSync('src/AuralObservatory.SearchDesktop/wwwroot/index.html','utf8');const scripts=[...t.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)];if(scripts.length!==1)process.exit(3);new vm.Script(scripts[0][1]); console.log('PASS: desktop inline JavaScript syntax');"
+          node -e "const fs=require('fs'),vm=require('vm');const t=fs.readFileSync('src/AuralObservatory.SearchDesktop/wwwroot/index.html','utf8');const begin=t.indexOf('<script>');const end=t.indexOf('</script>',begin);if(begin<0||end<0)process.exit(3);new vm.Script(t.slice(begin+8,end));console.log('PASS: desktop inline JavaScript syntax');"
   android:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
