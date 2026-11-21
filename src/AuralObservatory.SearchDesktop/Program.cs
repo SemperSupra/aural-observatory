@@ -16,6 +16,7 @@ var search = new QuietSearch(original);
 var audio = Array.Empty<byte>();
 var lastStopped = 0d;
 var currentAudioId = 0;
+var currentInputMode = QuietInputMode.HoldWhenQuiet;
 var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AuralObservatory");
 Directory.CreateDirectory(dataDir);
 var logPath = Path.Combine(dataDir, "quiet_search.csv");
@@ -33,7 +34,7 @@ app.MapGet("/", () =>
         .Replace("__SESSION_TOKEN__", token, StringComparison.Ordinal);
     return Results.Content(html, "text/html; charset=utf-8");
 });
-app.MapPost("/api/next", () =>
+app.MapPost("/api/next", (ModeInput input) =>
 {
     lock (gate)
     {
@@ -43,6 +44,9 @@ app.MapPost("/api/next", () =>
             if (QuietSearch.NowSeconds() - lastStopped < 10) return Results.Conflict(new { error = "Observe at least 10 seconds after sound stops" });
             Store(search.Finish(QuietSearch.NowSeconds()));
         }
+        if (!Enum.TryParse<QuietInputMode>(input.Mode, false, out var chosenMode) || !Enum.IsDefined(chosenMode))
+            return Results.BadRequest(new { error = "Unknown input mode" });
+        currentInputMode = chosenMode;
         SearchCandidate trial;
         try { trial = search.Begin(QuietSearch.NowSeconds()); }
         catch (InvalidOperationException) { return Results.Ok(new { finished = true, summary = search.Results.Select(r => new { r.Candidate.FrequencyHz, r.AfterQuietSeconds, r.DuringQuietSeconds }) }); }
@@ -95,11 +99,11 @@ void Store(SearchResult result)
         result.Candidate.FrequencyHz.ToString("F2", CultureInfo.InvariantCulture), result.Candidate.Stage,
         result.Candidate.RepeatedControl,
         result.DuringQuietSeconds.ToString("F3", CultureInfo.InvariantCulture),
-        result.AfterQuietSeconds.ToString("F3", CultureInfo.InvariantCulture), result.Interrupted,
+        result.AfterQuietSeconds.ToString("F3", CultureInfo.InvariantCulture), result.Interrupted, currentInputMode,
         result.LoudnessAfter?.ToString(CultureInfo.InvariantCulture) ?? "",
         Csv(result.Note ?? "")) + "\n";
     if (!File.Exists(logPath)) File.WriteAllText(logPath,
-        "timestamp_utc,trial,hz,stage,control,during_quiet_s,after_quiet_s,interrupted,loudness_after,note\n");
+        "timestamp_utc,trial,hz,stage,control,during_quiet_s,after_quiet_s,interrupted,input_mode,loudness_after,note\n");
     File.AppendAllText(logPath, text);
 }
 static string Csv(string value) => "\"" + value.Replace("\"", "\"\"").Replace("\r", " ").Replace("\n", " ") + "\"";
@@ -128,5 +132,6 @@ static byte[] MakeWave(StimulusSettings settings)
     }
     return memory.ToArray();
 }
+record ModeInput(string Mode);
 record HoldInput(bool Down);
 record Annotation(string? Note, double? LoudnessAfter);
