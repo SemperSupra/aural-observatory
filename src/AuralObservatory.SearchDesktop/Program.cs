@@ -11,14 +11,21 @@ builder.WebHost.UseUrls("http://127.0.0.1:8766");
 var app = builder.Build();
 var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 var gate = new object();
-var original = new StimulusSettings(new EarProfile(4000, 0.6, 1.0), new EarProfile(4000, 0.6, 1.0));
-var search = new QuietSearch(original);
+var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AuralObservatory");
+Directory.CreateDirectory(dataDir);
+var preferencesPath = Path.Combine(dataDir, "preferences-v1.json");
+UserPreferences preferences;
+try { preferences = UserPreferencesStore.ReadFile(preferencesPath); }
+catch (Exception ex) {
+    // Fail visibly, preserve invalid or future-version document; do NOT erase evidence.
+    Console.Error.WriteLine("Preferences unreadable (left unchanged): " + ex.Message);
+    preferences = UserPreferences.Default;
+}
+var search = new QuietSearch(preferences.LastStimulus);
 var audio = Array.Empty<byte>();
 var lastStopped = 0d;
 var currentAudioId = 0;
-var currentInputMode = QuietInputMode.HoldWhenQuiet;
-var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AuralObservatory");
-Directory.CreateDirectory(dataDir);
+var currentInputMode = preferences.ResponseMode;
 var logPath = Path.Combine(dataDir, "quiet_search_r7.csv");
 app.Use(async (ctx, next) =>
 {
@@ -33,6 +40,39 @@ app.MapGet("/", () =>
     var html = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "wwwroot", "index.html"))
         .Replace("__SESSION_TOKEN__", token, StringComparison.Ordinal);
     return Results.Content(html, "text/html; charset=utf-8");
+});
+app.MapGet("/api/preferences", () =>
+{
+    lock(gate) return Results.Json(preferences);
+});
+app.MapPost("/api/preferences", (UserPreferences input) =>
+{
+    lock(gate) {
+        if(search.State is SearchState.Stimulating or SearchState.PostStimulus)
+            return Results.Conflict(new { error = "Stop the active trial before changing preferences" });
+        try {
+            UserPreferencesStore.WriteFile(preferencesPath, input);
+            preferences = input;
+            return Results.Ok(new { saved = true, nextTrialUsesSavedAudioSettings = false });
+        }
+        catch(Exception ex) when(ex is ArgumentException or NotSupportedException or FormatException)
+        { return Results.BadRequest(new { error=ex.Message }); }
+    }
+});
+app.MapPost("/api/preset", (PresetInput input) =>
+{
+    lock(gate) {
+        if(search.State is SearchState.Stimulating or SearchState.PostStimulus)
+            return Results.Conflict(new { error = "Finish the trial before saving a preset" });
+        try {
+            var next = UserPreferencesStore.SavePreset(preferences,input.Name,DateTimeOffset.UtcNow);
+            UserPreferencesStore.WriteFile(preferencesPath,next);
+            preferences=next;
+            return Results.Json(next.Presets.Select(p=>new {p.Name,p.CreatedUtc}));
+        }
+        catch(Exception ex) when(ex is ArgumentException or InvalidOperationException or FormatException)
+        {return Results.BadRequest(new {error=ex.Message});}
+    }
 });
 app.MapPost("/api/next", (ModeInput input) =>
 {
@@ -132,6 +172,7 @@ static byte[] MakeWave(StimulusSettings settings)
     }
     return memory.ToArray();
 }
+record PresetInput(string Name);
 record ModeInput(string Mode);
 record HoldInput(bool Down);
 record Annotation(string? Note, double? LoudnessAfter);
