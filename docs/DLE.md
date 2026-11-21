@@ -58,3 +58,9 @@ G1 before distributing an APK; G2/G3 before prolonged listening. G4 independent 
 - Private Android and Windows Foundry repositories retain governance, eligibility and release controls. Public product/Foundry planes own reusable build mechanics; no private or personal input data in public CI.
 - G7 status: synthetic build/test and installer compilation PENDING; on-device BLE/ANT+ acquisition, acoustic validation, Windows install/uninstall, signing and production publishing NOT COMPLETE.
 - Authority and acceptance: docs/QUIET-MODES-AND-PACKAGING-R7.md, public PR for this branch, runner census SemperSupra/agent-dispatch-private#223/#281.
+
+## R8-A — digital spectral and signal qualification
+- Owner PR: #9 (draft), independent R7-stacked branch. Runs on public standard Ubuntu 24.04, Windows 2025, macOS 26 (max-parallel 2).
+- Executable synthetic `AuralObservatory.Audio.Tests` renders actual `StimulusEngine` PCM16; measures bandwise PSD and approximate spectral exponent, left/right notch suppression and off-band leakage, peak/RMS, block partition identity, ramp start and channel isolation. Versioned JSON receipt; no user audio in CI.
+- CI status: pending completion. Do not assert exact pink/brown/blue/violet PSD from color labels without numerical evidence. Keep original generator intact for historical comparisons.
+- This does NOT measure physical dB SPL, hearing-aid output transfer, acoustics or clinical benefit; G2 acoustic/physical release gate remains blocked.
