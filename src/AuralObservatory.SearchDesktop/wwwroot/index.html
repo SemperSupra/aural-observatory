@@ -57,7 +57,7 @@ const status=document.querySelector('#status'),audio=document.querySelector('#so
 const mode=document.querySelector('#mode');
 let down=false, quiet=false, armed=false, active=false, post=false;
 function msg(x){status.textContent=x;}
-function resetInput(){down=false;quiet=false;armed=false;hold.classList.remove('down');hold.textContent=mode.value==='ReleaseWhenQuiet'?'HOLD WHILE AUDIBLE; RELEASE WHEN QUIET':mode.value==='ToggleQuiet'?'TAP WHEN QUIET (TOGGLE)':'PRESS AND HOLD WHEN QUIET';}
+function resetInput(){down=false;quiet=false;armed=false;keyboardQuietHeld=false;hold.classList.remove('down');hold.textContent=mode.value==='ReleaseWhenQuiet'?'HOLD WHILE AUDIBLE; RELEASE WHEN QUIET':mode.value==='ToggleQuiet'?'TAP WHEN QUIET (TOGGLE)':'PRESS AND HOLD WHEN QUIET';}
 function updateLabel(){hold.classList.toggle('down',quiet);hold.textContent=mode.value==='ReleaseWhenQuiet'?(down?'AUDIBLE — RELEASE WHEN QUIET':'RELEASED — QUIET MARK ACTIVE'):mode.value==='ToggleQuiet'?(quiet?'QUIET ACTIVE — TAP TO END':'TAP WHEN QUIET (TOGGLE)'):(quiet?'QUIET ACTIVE — RELEASE TO END':'PRESS AND HOLD WHEN QUIET');}
 async function setHold(v){
  if(!active&&!post)return;
@@ -73,10 +73,27 @@ function release(){void setHold(false);}
 mode.addEventListener('change',resetInput);
 hold.addEventListener('pointerdown', e=>{e.preventDefault();hold.setPointerCapture(e.pointerId);void setHold(true)});
 hold.addEventListener('pointerup',release);
-function cancelInput(){if(!active&&!post)return;resetInput();void api('hold',{down:false}).catch(e=>msg(e.message));}
+function cancelInput(){if(!active&&!post)return;keyboardQuietHeld=false;resetInput();void api('hold',{down:false}).catch(e=>msg(e.message));}
 hold.addEventListener('pointercancel',cancelInput);window.addEventListener('blur',cancelInput);
-document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){e.preventDefault();void setHold(true);}});
-document.addEventListener('keyup',e=>{if(e.code==='Space'){e.preventDefault();release();}});
+let keyboardQuietHeld=false;
+function keyboardShortcutAllowed(target){
+  if(!active&&!post)return false;
+  if(!target || !(target instanceof Element))return true;
+  if(target.closest('button,input,textarea,select,a,[role="button"],[role="checkbox"],[contenteditable="true"]'))return false;
+  return true;
+}
+document.addEventListener('keydown',e=>{
+  if(e.code!=='Space'||e.repeat||!keyboardShortcutAllowed(e.target))return;
+  keyboardQuietHeld=true;
+  e.preventDefault();
+  void setHold(true);
+});
+document.addEventListener('keyup',e=>{
+  if(e.code!=='Space'||!keyboardQuietHeld)return;
+  keyboardQuietHeld=false;
+  e.preventDefault();
+  release();
+});
 async function annotate(){const value=document.querySelector('#loudness').value;await api('annotate',{note:document.querySelector('#note').value,loudnessAfter:value===''?null:Number(value)})}
 document.querySelector('#save').onclick=async()=>{try{await annotate();msg('Annotation saved to current trial; it will persist when you advance.')}catch(e){msg(e.message)}};
 document.querySelector('#next').onclick=async()=>{try{await annotate();const trial=await api('next',{mode:mode.value});if(trial.finished){active=false;post=false;msg('Frequency sweep complete. Review observations and repeat sessions to assess reproducibility.');return;}
