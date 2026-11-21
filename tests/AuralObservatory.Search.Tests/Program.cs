@@ -25,4 +25,24 @@ Check(second.FrequencyHz != trial.FrequencyHz, "new trial selected");
 s.MarkQuiet(true, 21); s.SoundStopped(22); s.Finish(23, interrupted: true);
 Check(s.Results[1].DuringQuietSeconds == 0, "interrupted results excluded from scores");
 try { s.Begin(2); throw new Exception("clock allowed to reverse"); } catch (ArgumentOutOfRangeException) { Console.WriteLine("PASS monotonic timestamp checks"); }
+
+var holdQuiet = new QuietInputController(QuietInputMode.HoldWhenQuiet);
+Check(holdQuiet.Process(true) == true, "hold mode down marks quiet");
+Check(holdQuiet.Process(true) is null, "repeat down suppressed");
+Check(holdQuiet.Process(false) == false, "hold mode release ends quiet");
+
+var releaseQuiet = new QuietInputController(QuietInputMode.ReleaseWhenQuiet);
+Check(!releaseQuiet.HasObservation && !releaseQuiet.IsQuiet, "inverse mode initial unarmed state is not quiet");
+Check(releaseQuiet.Process(false) is null, "inverse idle release does not indicate quiet");
+Check(releaseQuiet.Process(true) == false, "inverse press indicates tinnitus audible");
+Check(releaseQuiet.Process(false) == true, "inverse release indicates quiet");
+releaseQuiet.Cancel();
+Check(!releaseQuiet.HasObservation && !releaseQuiet.IsQuiet, "inverse mode phase reset unarmed");
+
+var toggle = new QuietInputController(QuietInputMode.ToggleQuiet);
+Check(toggle.Process(true) == true && toggle.Process(false) is null, "toggle on only at down edge");
+Check(toggle.Process(true) == false && toggle.Process(false) is null, "toggle off only at next down edge");
+toggle.Reset(QuietInputMode.HoldWhenQuiet);
+Check(toggle.Process(true) == true && toggle.Mode == QuietInputMode.HoldWhenQuiet, "reconfigurable mode");
+
 Console.WriteLine("All search tests passed.");
