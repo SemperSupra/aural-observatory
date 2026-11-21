@@ -1,0 +1,132 @@
+using AuralObservatory.Core;
+using System.Text;
+using System.Text.Json;
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Net;
+
+// Local-only browser frontend, with native C# DSP. No browser-side sound synthesis or Internet access.
+var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls("http://127.0.0.1:8766");
+var app = builder.Build();
+var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+var gate = new object();
+var original = new StimulusSettings(new EarProfile(4000, 0.6, 1.0), new EarProfile(4000, 0.6, 1.0));
+var search = new QuietSearch(original);
+var audio = Array.Empty<byte>();
+var lastStopped = 0d;
+var currentAudioId = 0;
+var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AuralObservatory");
+Directory.CreateDirectory(dataDir);
+var logPath = Path.Combine(dataDir, "quiet_search.csv");
+app.Use(async (ctx, next) =>
+{
+    ctx.Response.Headers.CacheControl = "no-store";
+    if (ctx.Request.Path.StartsWithSegments("/api") &&
+        ctx.Request.Headers["X-Aural-Token"] != token && ctx.Request.Query["token"] != token)
+    { ctx.Response.StatusCode = 403; return; }
+    await next();
+});
+app.MapGet("/", () =>
+{
+    var html = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "wwwroot", "index.html"))
+        .Replace("__SESSION_TOKEN__", token, StringComparison.Ordinal);
+    return Results.Content(html, "text/html; charset=utf-8");
+});
+app.MapPost("/api/next", () =>
+{
+    lock (gate)
+    {
+        if (search.State == SearchState.Stimulating) return Results.Conflict(new { error = "Sound still playing" });
+        if (search.State == SearchState.PostStimulus)
+        {
+            if (QuietSearch.NowSeconds() - lastStopped < 10) return Results.Conflict(new { error = "Observe at least 10 seconds after sound stops" });
+            Store(search.Finish(QuietSearch.NowSeconds()));
+        }
+        SearchCandidate trial;
+        try { trial = search.Begin(QuietSearch.NowSeconds()); }
+        catch (InvalidOperationException) { return Results.Ok(new { finished = true, summary = search.Results.Select(r => new { r.Candidate.FrequencyHz, r.AfterQuietSeconds, r.DuringQuietSeconds }) }); }
+        audio = MakeWave(trial.Settings);
+        currentAudioId++;
+        return Results.Ok(new { finished = false, trial = trial.Number, hz = trial.FrequencyHz, control = trial.RepeatedControl,
+            stage = trial.Stage, source = "/api/audio/" + currentAudioId });
+    }
+});
+app.MapGet("/api/audio/{id:int}", (int id) =>
+{
+    lock (gate)
+    {
+        if (search.State != SearchState.Stimulating || id != currentAudioId) return Results.NotFound();
+        return Results.File(audio, "audio/wav", enableRangeProcessing: false);
+    }
+});
+app.MapPost("/api/hold", (HoldInput input) =>
+{
+    lock (gate) { search.MarkQuiet(input.Down, QuietSearch.NowSeconds()); return Results.Ok(); }
+});
+app.MapPost("/api/ended", () =>
+{
+    lock (gate) { search.SoundStopped(lastStopped = QuietSearch.NowSeconds()); return Results.Ok(); }
+});
+app.MapPost("/api/annotate", (Annotation input) =>
+{
+    lock (gate) { search.Annotate(input.Note, input.LoudnessAfter); return Results.Ok(); }
+});
+app.MapPost("/api/interrupt", () =>
+{
+    lock (gate)
+    {
+        if (search.State is SearchState.Stimulating or SearchState.PostStimulus)
+            Store(search.Finish(QuietSearch.NowSeconds(), interrupted: true));
+        return Results.Ok();
+    }
+});
+app.MapGet("/api/export", () =>
+{
+    lock (gate) return Results.Text(File.Exists(logPath) ? File.ReadAllText(logPath) : "No observations yet", "text/plain");
+});
+Console.WriteLine("Aural Observatory local search: http://127.0.0.1:8766");
+Console.WriteLine("Local data directory: " + dataDir);
+await app.RunAsync();
+
+void Store(SearchResult result)
+{
+    var text = string.Join(",", DateTimeOffset.UtcNow.ToString("O"), result.Candidate.Number,
+        result.Candidate.FrequencyHz.ToString("F2", CultureInfo.InvariantCulture), result.Candidate.Stage,
+        result.Candidate.RepeatedControl,
+        result.DuringQuietSeconds.ToString("F3", CultureInfo.InvariantCulture),
+        result.AfterQuietSeconds.ToString("F3", CultureInfo.InvariantCulture), result.Interrupted,
+        result.LoudnessAfter?.ToString(CultureInfo.InvariantCulture) ?? "",
+        Csv(result.Note ?? "")) + "\n";
+    if (!File.Exists(logPath)) File.WriteAllText(logPath,
+        "timestamp_utc,trial,hz,stage,control,during_quiet_s,after_quiet_s,interrupted,loudness_after,note\n");
+    File.AppendAllText(logPath, text);
+}
+static string Csv(string value) => "\"" + value.Replace("\"", "\"\"").Replace("\r", " ").Replace("\n", " ") + "\"";
+static byte[] MakeWave(StimulusSettings settings)
+{
+    const int frames = 15 * StimulusValidation.SampleRate;
+    var engine = new StimulusEngine(settings);
+    using var memory = new MemoryStream(44 + frames * 4);
+    using var writer = new BinaryWriter(memory, Encoding.ASCII, leaveOpen: true);
+    writer.Write(Encoding.ASCII.GetBytes("RIFF")); writer.Write(36 + frames * 4);
+    writer.Write(Encoding.ASCII.GetBytes("WAVEfmt ")); writer.Write(16); writer.Write((short)1);
+    writer.Write((short)2); writer.Write(StimulusValidation.SampleRate); writer.Write(StimulusValidation.SampleRate * 4);
+    writer.Write((short)4); writer.Write((short)16);
+    writer.Write(Encoding.ASCII.GetBytes("data")); writer.Write(frames * 4);
+    var buffer = new short[2048];
+    for (int pos = 0; pos < frames; pos += 1024)
+    {
+        var count = Math.Min(1024, frames - pos);
+        engine.Render(buffer, count);
+        for (int i = 0; i < count; i++)
+        {
+            var fade = Math.Min(1.0, (frames - pos - i) / (0.1 * StimulusValidation.SampleRate));
+            writer.Write((short)Math.Round(buffer[i * 2] * fade));
+            writer.Write((short)Math.Round(buffer[i * 2 + 1] * fade));
+        }
+    }
+    return memory.ToArray();
+}
+record HoldInput(bool Down);
+record Annotation(string? Note, double? LoudnessAfter);

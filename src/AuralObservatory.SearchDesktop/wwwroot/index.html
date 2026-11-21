@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aural Observatory Quiet Search</title>
+<style>body{font:16px system-ui,sans-serif;max-width:700px;margin:20px auto;padding:0 15px;line-height:1.5;background:#f4f6f9;color:#151a27}h1{font-size:1.6rem}section{border:1px solid #c6ccd6;background:white;border-radius:12px;padding:20px;margin:14px 0}button,input,textarea{font:inherit;padding:10px;border-radius:9px}button{background:#263e65;color:white;border:0;cursor:pointer;margin:4px 0}button:disabled{opacity:.5}#quiet{display:block;width:100%;height:110px;touch-action:none;user-select:none;background:#344f74;font-size:1.2rem;font-weight:700}#quiet.down{background:#15583f}small{color:#485365}textarea{width:95%;min-height:65px}#status{white-space:pre-line}</style></head>
+<body><h1>Aural Observatory · Quiet Search</h1>
+<p>Research tool, not medical treatment. Begin at a low device volume. Generated PCM level is not headphone SPL. This search <strong>never raises gain</strong>.</p>
+<section><h2>Fixed-level frequency trials</h2><p id="status">Ready. Each trial plays for 15 seconds. Press and hold during perceived quiet; continue holding after playback if tinnitus remains reduced.</p>
+<button id="next">Start / next trial</button> <button id="stop">Stop</button>
+<audio id="sound" preload="auto"></audio>
+</section>
+<section><button id="quiet" aria-label="Hold only while tinnitus seems absent">PRESS AND HOLD WHEN QUIET<br><small>Mouse, touchscreen, or SPACE key</small></button>
+<p>Quiet while sound plays indicates possible masking; quiet after it ends is a separate residual-inhibition observation. Neither objectively detects tinnitus.</p></section>
+<section><label>After-sound tinnitus loudness (optional, 0–10): <input id="loudness" type="number" min="0" max="10" step="0.5"></label>
+<p><label>Notes <textarea id="note" placeholder="e.g. quieter in the left ear, less intrusive, uncomfortable..."></textarea></label></p>
+<button id="save">Save note to current trial</button> <button id="export">Show local CSV observations</button></section>
+<script>
+const token = '__SESSION_TOKEN__';
+const api = async (url, data) => { const r = await fetch('/api/'+url,{method:'POST',headers:{'Content-Type':'application/json','X-Aural-Token':token},body:JSON.stringify(data??{})});const result=await r.json().catch(()=>({}));if(!r.ok)throw Error(result.error||r.statusText);return result; };
+const status=document.querySelector('#status'),audio=document.querySelector('#sound'),hold=document.querySelector('#quiet');
+let down=false;let active=false;let post=false;
+function msg(x){status.textContent=x;}
+async function setHold(v){if(down===v)return;if(!active&&!post)return;down=v;hold.classList.toggle('down',v);hold.innerText=v?'QUIET MARK ACTIVE · RELEASE TO END':'PRESS AND HOLD WHEN QUIET';try{await api('hold',{down:v});}catch(e){msg(e.message);}}
+function release(){void setHold(false);}
+hold.addEventListener('pointerdown', e=>{e.preventDefault();hold.setPointerCapture(e.pointerId);void setHold(true)});
+hold.addEventListener('pointerup',release);hold.addEventListener('pointercancel',release);window.addEventListener('blur',release);
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){e.preventDefault();void setHold(true);}});
+document.addEventListener('keyup',e=>{if(e.code==='Space'){e.preventDefault();release();}});
+async function annotate(){const value=document.querySelector('#loudness').value;await api('annotate',{note:document.querySelector('#note').value,loudnessAfter:value===''?null:Number(value)})}
+document.querySelector('#save').onclick=async()=>{try{await annotate();msg('Annotation saved to current trial; it will persist when you advance.')}catch(e){msg(e.message)}};
+document.querySelector('#next').onclick=async()=>{try{await annotate();release();const trial=await api('next');if(trial.finished){active=false;post=false;msg('Frequency sweep complete. Review observations and repeat sessions to assess reproducibility.');return;}
+  document.querySelector('#note').value='';document.querySelector('#loudness').value='';active=true;post=false;
+  audio.src=trial.source+'?token='+token; // token is checked by endpoint below
+  msg(`Trial ${trial.trial}: ${trial.hz.toFixed(0)} Hz, stage ${trial.stage}. Fixed level. Hold during perceived quiet.`);
+  await audio.play();
+}catch(e){msg('Could not start: '+e.message);}};
+audio.addEventListener('ended',async()=>{release();active=false;post=true;await api('ended');msg('Stimulus stopped: observe at least 10 seconds. Hold QUIET if ringing remains reduced, then advance.');});
+document.querySelector('#stop').onclick=async()=>{audio.pause();audio.currentTime=0;release();active=false;post=false;await api('interrupt');msg('Stopped. Incomplete trial excluded from ranking.');};
+document.querySelector('#export').onclick=async()=>{const r=await fetch('/api/export',{headers:{'X-Aural-Token':token}});const txt=await r.text();const blob=new Blob([txt],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='aural-quiet-search.csv';a.click();URL.revokeObjectURL(a.href);};
+</script></body></html>
