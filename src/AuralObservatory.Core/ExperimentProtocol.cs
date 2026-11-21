@@ -59,7 +59,7 @@ public static class ExperimentPlanner
         {
             if(string.IsNullOrWhiteSpace(arm.Id)||string.IsNullOrWhiteSpace(arm.AlgorithmId))
                 throw new ArgumentException("Missing arm identity or algorithm provenance");
-            if(arm.StimulusSha256.Length!=64 || !arm.StimulusSha256.All(Uri.IsHexDigit))
+            if(string.IsNullOrWhiteSpace(arm.StimulusSha256) || arm.StimulusSha256.Length!=64 || !arm.StimulusSha256.All(Uri.IsHexDigit))
                 throw new ArgumentException("Each arm needs a hex SHA-256 of its exact stimulus");
             if(!double.IsFinite(arm.DigitalCeiling)||arm.DigitalCeiling<0||arm.DigitalCeiling>StimulusValidation.DigitalPeakCeiling)
                 throw new ArgumentOutOfRangeException(nameof(arm.DigitalCeiling),"Digital ceiling too high");
