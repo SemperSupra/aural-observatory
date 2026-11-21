@@ -1,19 +1,51 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Aural Observatory Quiet Search</title>
-<style>body{font:16px system-ui,sans-serif;max-width:700px;margin:20px auto;padding:0 15px;line-height:1.5;background:#f4f6f9;color:#151a27}h1{font-size:1.6rem}section{border:1px solid #c6ccd6;background:white;border-radius:12px;padding:20px;margin:14px 0}button,input,textarea{font:inherit;padding:10px;border-radius:9px}button{background:#263e65;color:white;border:0;cursor:pointer;margin:4px 0}button:disabled{opacity:.5}#quiet{display:block;width:100%;height:110px;touch-action:none;user-select:none;background:#344f74;font-size:1.2rem;font-weight:700}#quiet.down{background:#15583f}small{color:#485365}textarea{width:95%;min-height:65px}#status{white-space:pre-line}</style></head>
-<body><h1>Aural Observatory · Quiet Search</h1>
+<style>
+:root{--bg:#f6f8fb;--panel:#fff;--fg:#17202e;--muted:#42526a;--border:#aebace;--accent:#213e64;--accentText:#fff;--focus:#d16b00;--font:system-ui,sans-serif;color-scheme:light}
+:root[data-theme=dark]{--bg:#121820;--panel:#222d3a;--fg:#f2f6fc;--muted:#d4deea;--border:#7d92aa;--accent:#a4caef;--accentText:#111c2b;--focus:#ffe28b;color-scheme:dark}
+:root[data-contrast=high]{--border:currentColor;--focus:#ffab00}
+*{box-sizing:border-box}html{font-family:var(--font)}body{font-size:1rem;line-height:1.55;max-width:780px;margin:0 auto;padding:1rem 1rem 3rem;background:var(--bg);color:var(--fg)}header{padding:0.5rem 0 1rem}nav{display:flex;flex-wrap:wrap;gap:.6rem}nav a{border:1px solid var(--border);border-radius:.6rem;padding:.55rem .8rem}
+h1{font-size:1.7rem;line-height:1.25}h2{font-size:1.2rem}section{border:1px solid var(--border);background:var(--panel);border-radius:.8rem;padding:1rem;margin:1rem 0}button,input,select,textarea{font:inherit;max-width:100%;border-radius:.5rem}input,select,textarea{background:var(--panel);color:var(--fg);border:1px solid var(--border);padding:.5rem}
+label{display:block;margin:.6rem 0}button{background:var(--accent);color:var(--accentText);border:1px solid var(--border);cursor:pointer;margin:.4rem 0;padding:.75rem 1rem;min-height:48px}button:disabled{opacity:.55}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+#quiet{display:block;width:100%;min-height:115px;touch-action:none;user-select:none;font-size:1.15rem;font-weight:700}#quiet.down{outline:4px solid var(--focus);outline-offset:-5px}
+small,.muted{color:var(--muted)}textarea{width:100%;min-height:85px}#status{white-space:pre-line}#font-size{width:100%;max-width:360px}.skip{position:absolute;left:-9999px;top:0}.skip:focus{left:10px;background:var(--panel);z-index:3;padding:.7rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:1rem}.grid>*{min-width:0}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+</style></head>
+<body><a href="#content" class="skip">Skip to the research controls</a>
+<header><h1>Aural Observatory · Quiet Search</h1>
+<nav aria-label="Sections"><a href="#experiment">Explore</a><a href="#feedback">Feedback</a><a href="#appearance">Appearance and presets</a></nav></header>
+<main id="content" tabindex="-1">
 <p>Research tool, not medical treatment. Begin at a low device volume. Generated PCM level is not headphone SPL. This search <strong>never raises gain</strong>.</p>
-<section><h2>Fixed-level frequency trials</h2><p id="status">Ready. Each trial plays for 15 seconds. Press and hold during perceived quiet; continue holding after playback if tinnitus remains reduced.</p>
+<section id="experiment" aria-labelledby="experiment-title"><h2 id="experiment-title">1. Explore fixed-level sound trials</h2><p id="status" role="status" aria-live="polite">Ready. Each trial plays for 15 seconds. Press and hold during perceived quiet; continue holding after playback if tinnitus remains reduced.</p>
 <button id="next">Start / next trial</button> <button id="stop">Stop</button>
 <audio id="sound" preload="auto"></audio>
 </section>
-<section><label>Response style: <select id="mode"><option value="HoldWhenQuiet">Hold while quiet</option><option value="ReleaseWhenQuiet">Hold while tinnitus is audible; RELEASE when quiet</option><option value="ToggleQuiet">Tap once to start quiet, again to end</option></select></label>
+<section aria-labelledby="response-title"><h2 id="response-title">2. Mark perceived quiet</h2><label>Response style: <select id="mode"><option value="HoldWhenQuiet">Hold while quiet</option><option value="ReleaseWhenQuiet">Hold while tinnitus is audible; RELEASE when quiet</option><option value="ToggleQuiet">Tap once to start quiet, again to end</option></select></label>
 <button id="quiet" aria-label="Record perceived tinnitus quiet with selected response style">PRESS AND HOLD WHEN QUIET</button>
 <p>Quiet while sound plays indicates possible masking; quiet after it ends is a separate residual-inhibition observation. Neither objectively detects tinnitus.</p></section>
-<section><label>After-sound tinnitus loudness (optional, 0–10): <input id="loudness" type="number" min="0" max="10" step="0.5"></label>
+<section id="feedback" aria-labelledby="feedback-title"><h2 id="feedback-title">3. Record your observation</h2><label>After-sound tinnitus loudness (optional, 0–10): <input id="loudness" type="number" min="0" max="10" step="0.5"></label>
 <p><label>Notes <textarea id="note" placeholder="e.g. quieter in the left ear, less intrusive, uncomfortable..."></textarea></label></p>
 <button id="save">Save note to current trial</button> <button id="export">Show local CSV observations</button></section>
+<section id="appearance" aria-labelledby="appearance-title">
+<h2 id="appearance-title">4. Appearance, accessibility and presets</h2>
+<p>These choices are stored in your operating system's user-data directory, separately from the installed application. No account is required.</p>
+<div class="grid">
+<label>Appearance <select id="theme"><option value="0">System</option><option value="1">Light</option><option value="2">Dark</option></select></label>
+<label>Font family <select id="font-family"><option value="0">System</option><option value="1">Sans serif</option><option value="2">Serif</option><option value="3">Monospace</option></select></label>
+<label>Text size <input id="font-size" type="range" min="80" max="200" step="10" value="100"><output id="size-output" for="font-size">100%</output></label>
+<label><input type="checkbox" id="high-contrast"> High contrast</label>
+<label><input type="checkbox" id="reduce-motion"> Reduce motion</label></div>
+<button id="save-prefs">Save my settings</button>
+<p><label>Preset name (current acoustic configuration) <input id="preset-name" maxlength="64" placeholder="e.g. Comfortable evening profile"></label>
+<button id="save-preset">Save named preset</button></p>
+<label>Saved profiles <select id="presets" aria-describedby="preset-info"><option value="">None yet</option></select></label>
+<button id="load-preset">Load selected preset for the next session</button>
+<p class="muted" id="preset-info">A preset records audio settings, not a medically validated treatment. The active study keeps its original configuration until restarted.</p>
+<p role="status" aria-live="polite" id="prefs-status">Loading preferences…</p>
+</section>
+</main>
 <script>
 const token = '__SESSION_TOKEN__';
 const api = async (url, data) => { const r = await fetch('/api/'+url,{method:'POST',headers:{'Content-Type':'application/json','X-Aural-Token':token},body:JSON.stringify(data??{})});const result=await r.json().catch(()=>({}));if(!r.ok)throw Error(result.error||r.statusText);return result; };
@@ -52,4 +84,67 @@ document.querySelector('#next').onclick=async()=>{try{await annotate();const tri
 audio.addEventListener('ended',async()=>{active=false;post=true;await api('ended');resetInput();msg('Stimulus stopped: re-arm your selected input mode to mark post-sound quiet. Observe at least 10 seconds.');});
 document.querySelector('#stop').onclick=async()=>{audio.pause();audio.currentTime=0;active=false;post=false;resetInput();mode.disabled=false;await api('interrupt');msg('Stopped. Incomplete trial excluded from ranking.');};
 document.querySelector('#export').onclick=async()=>{const r=await fetch('/api/export',{headers:{'X-Aural-Token':token}});const txt=await r.text();const blob=new Blob([txt],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='aural-quiet-search.csv';a.click();URL.revokeObjectURL(a.href);};
+
+const theme=document.querySelector('#theme'),fontFamily=document.querySelector('#font-family'),
+ fontSize=document.querySelector('#font-size'), highContrast=document.querySelector('#high-contrast'),
+ reduceMotion=document.querySelector('#reduce-motion'),prefsStatus=document.querySelector('#prefs-status'),
+ presetSelect=document.querySelector('#presets');
+let prefs=null;
+const darkQuery=window.matchMedia('(prefers-color-scheme: dark)');
+function appearance(){
+ const root=document.documentElement;
+ const choose=theme.value==='2'?'dark':theme.value==='1'?'light':(darkQuery.matches?'dark':'light');
+ root.dataset.theme=choose;
+ root.dataset.contrast=highContrast.checked?'high':'normal';
+ root.style.fontSize=fontSize.value+'%';
+ root.style.setProperty('--font',[
+ 'system-ui, sans-serif','Arial, Helvetica, sans-serif','Georgia, serif','ui-monospace, monospace'
+ ][Number(fontFamily.value)]);
+ document.querySelector('#size-output').textContent=fontSize.value+'%';
+ root.dataset.motion=reduceMotion.checked?'reduced':'system';
+}
+for(const item of [theme,fontFamily,fontSize,highContrast,reduceMotion])item.addEventListener('change',appearance);
+darkQuery.addEventListener?.('change',appearance);
+function renderPreferences(){
+ if(!prefs)return;
+ theme.value=String(prefs.appearance);
+ fontFamily.value=String(prefs.fontFamily);
+ fontSize.value=String(prefs.fontScalePercent);
+ highContrast.checked=!!prefs.highContrast;
+ reduceMotion.checked=!!prefs.reduceMotion;
+ mode.value=['HoldWhenQuiet','ReleaseWhenQuiet','ToggleQuiet'][prefs.responseMode]||'HoldWhenQuiet';
+ resetInput();appearance();
+ presetSelect.replaceChildren(new Option('Choose a saved preset',''));
+ for(const p of prefs.presets||[])presetSelect.add(new Option(p.name,p.name));
+}
+async function reloadPreferences(){
+ try{
+  const r=await fetch('/api/preferences',{headers:{'X-Aural-Token':token}});
+  if(!r.ok)throw Error('Could not read settings');
+  prefs=await r.json();renderPreferences();
+  prefsStatus.textContent='Settings loaded from your user profile.';
+ }catch(e){prefsStatus.textContent='Preferences unavailable: '+e.message;}
+}
+document.querySelector('#save-prefs').addEventListener('click',async()=>{
+ if(!prefs)return;
+ prefs.appearance=Number(theme.value);prefs.fontFamily=Number(fontFamily.value);
+ prefs.fontScalePercent=Number(fontSize.value);prefs.highContrast=highContrast.checked;
+ prefs.reduceMotion=reduceMotion.checked;
+ prefs.responseMode=['HoldWhenQuiet','ReleaseWhenQuiet','ToggleQuiet'].indexOf(mode.value);
+ try{await api('preferences',prefs);prefsStatus.textContent='Preferences saved to your user profile.';}
+ catch(e){prefsStatus.textContent='Could not save preferences: '+e.message;}
+});
+document.querySelector('#save-preset').addEventListener('click',async()=>{
+ const name=document.querySelector('#preset-name').value.trim();
+ if(!name)return prefsStatus.textContent='Enter a preset name.';
+ try{await api('preset',{name});await reloadPreferences();prefsStatus.textContent='Named preset saved.';}
+ catch(e){prefsStatus.textContent='Preset not saved: '+e.message;}
+});
+document.querySelector('#load-preset').addEventListener('click',async()=>{
+ if(!presetSelect.value)return prefsStatus.textContent='Choose a preset first.';
+ try{await api('preset/load',{name:presetSelect.value});await reloadPreferences();
+  prefsStatus.textContent='Preset loaded; restart the active search to compare this profile.';}
+ catch(e){prefsStatus.textContent='Preset not loaded: '+e.message;}
+});
+void reloadPreferences();
 </script></body></html>
