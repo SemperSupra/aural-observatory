@@ -36,7 +36,9 @@ async function setHold(v){
 function release(){void setHold(false);}
 mode.addEventListener('change',resetInput);
 hold.addEventListener('pointerdown', e=>{e.preventDefault();hold.setPointerCapture(e.pointerId);void setHold(true)});
-hold.addEventListener('pointerup',release);hold.addEventListener('pointercancel',release);window.addEventListener('blur',release);
+hold.addEventListener('pointerup',release);
+function cancelInput(){if(!active&&!post)return;resetInput();void api('hold',{down:false}).catch(e=>msg(e.message));}
+hold.addEventListener('pointercancel',cancelInput);window.addEventListener('blur',cancelInput);
 document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){e.preventDefault();void setHold(true);}});
 document.addEventListener('keyup',e=>{if(e.code==='Space'){e.preventDefault();release();}});
 async function annotate(){const value=document.querySelector('#loudness').value;await api('annotate',{note:document.querySelector('#note').value,loudnessAfter:value===''?null:Number(value)})}
