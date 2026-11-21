@@ -1,0 +1,108 @@
+name: Public Aural Observatory candidate packages (unsigned, no promotion)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'packaging/**'
+      - '.github/workflows/package-candidates.yml'
+permissions:
+  contents: read
+concurrency:
+  group: aural-packaging-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  desktop:
+    name: Portable desktop + Windows installer (${{ matrix.rid }})
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - runner: windows-2025
+            rid: win-x64
+          - runner: ubuntu-24.04
+            rid: linux-x64
+          - runner: macos-26
+            rid: osx-arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # reviewed upstream SHA
+        with:
+          dotnet-version: '10.0.x'
+      - name: Search and DSP tests
+        run: dotnet run --project tests/AuralObservatory.Search.Tests/AuralObservatory.Search.Tests.csproj --configuration Release
+      - name: Publish self-contained desktop app
+        run: dotnet publish src/AuralObservatory.SearchDesktop/AuralObservatory.SearchDesktop.csproj --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false --output publish/${{ matrix.rid }}
+      - name: Windows zip + NSIS candidate installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory artifacts -Force | Out-Null
+          Compress-Archive -Path 'publish/win-x64/*' -DestinationPath 'artifacts/AuralObservatory-SearchDesktop-win-x64-candidate.zip'
+          choco install nsis --version=3.12.0 --no-progress -y
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $makensis = Join-Path ${env:ProgramFiles(x86)} 'NSIS/makensis.exe'
+          if (!(Test-Path $makensis)) { throw 'NSIS compiler absent' }
+          $absolute = (Resolve-Path 'publish/win-x64').Path
+          $outputFile = Join-Path (Resolve-Path 'artifacts').Path 'AuralObservatory-SearchDesktop-Setup-Candidate.exe'
+          & $makensis "/DPRODUCT_DIR=$absolute" "/DOUTPUT_FILE=$outputFile" "packaging/windows/AuralObservatory.nsi"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem artifacts -File | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  $(Split-Path $_.Path -Leaf)" } | Set-Content artifacts/SHA256SUMS.txt
+          if (!(Test-Path 'artifacts/AuralObservatory-SearchDesktop-Setup-Candidate.exe')) { throw 'Installer absent' }
+      - name: Windows clean install, repeat-install and uninstall (no signing or publication)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/Test-WindowsCandidate.ps1 -Installer 'artifacts/AuralObservatory-SearchDesktop-Setup-Candidate.exe'
+      - name: Linux/macOS archive
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          tar -czf "artifacts/AuralObservatory-SearchDesktop-${{ matrix.rid }}-candidate.tar.gz" -C "publish/${{ matrix.rid }}" .
+          (cd artifacts && if command -v sha256sum >/dev/null; then sha256sum *.tar.gz; else shasum -a 256 *.tar.gz; fi) > artifacts/SHA256SUMS.txt
+      - name: Upload immutable-run candidate files (NOT public release)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: aural-observatory-candidate-${{ matrix.rid }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 3
+  android:
+    name: Native Android APK candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
+        with:
+          dotnet-version: '10.0.x'
+      - name: Android SDK platform
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER=$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools" -name sdkmanager -type f | head -n 1)
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platforms;android-36' 'build-tools;36.0.0'
+      - run: dotnet workload install android
+      - name: Build native Android candidate
+        run: dotnet build src/AuralObservatory.Android/AuralObservatory.Android.csproj -c Debug
+      - name: Stage APK and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          find src/AuralObservatory.Android/bin/Debug/net10.0-android -name '*.apk' -type f -print -exec cp '{}' artifacts/ \;
+          ls artifacts/*.apk >/dev/null
+          (cd artifacts && sha256sum *.apk > SHA256SUMS.txt)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: aural-observatory-native-android-debug-candidate
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 3

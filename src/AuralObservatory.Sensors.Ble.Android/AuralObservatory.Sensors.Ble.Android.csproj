@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <SupportedOSPlatformVersion>26.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../AuralObservatory.Sensors.Ble/BleHeartRateSensor.cs" Link="BleHeartRateSensor.cs" />
+    <ProjectReference Include="../AuralObservatory.Sensors/AuralObservatory.Sensors.csproj" />
+    <PackageReference Include="InTheHand.BluetoothLE" Version="4.0.45" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,91 @@
+name: Native Android + cross-platform core
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  core:
+    name: DSP core tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet run --project tests/AuralObservatory.Core.Tests/AuralObservatory.Core.Tests.csproj --configuration Release
+      - run: dotnet run --project tests/AuralObservatory.Search.Tests/AuralObservatory.Search.Tests.csproj --configuration Release
+      - run: dotnet run --project tests/AuralObservatory.Garmin.Tests/AuralObservatory.Garmin.Tests.csproj --configuration Release
+      - run: dotnet build src/AuralObservatory.SearchDesktop/AuralObservatory.SearchDesktop.csproj --configuration Release
+      - run: dotnet build src/AuralObservatory.GarminConsole/AuralObservatory.GarminConsole.csproj --configuration Release
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      # Hosted SDK manager is not always on PATH.
+      - name: Resolve SDK manager and install Android API 36
+        shell: bash
+        run: |
+          SDKMANAGER=$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools" -name sdkmanager -type f | head -n 1)
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0"
+      - run: dotnet workload install android
+      - run: dotnet build src/AuralObservatory.Android/AuralObservatory.Android.csproj -c Debug
+      - name: Upload debug-only test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: aural-observatory-native-debug-unsigned-for-qualification
+          path: 'src/AuralObservatory.Android/bin/Debug/net10.0-android/**/*.apk'
+          if-no-files-found: warn
+  sensors:
+    name: Sensor protocol + BLE integration compile (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet run --project tests/AuralObservatory.Sensors.Tests/AuralObservatory.Sensors.Tests.csproj --configuration Release
+      - run: dotnet build src/AuralObservatory.SensorConsole/AuralObservatory.SensorConsole.csproj --configuration Release
+  sensor-macos:
+    name: Sensor CoreBluetooth target compile (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Pin Xcode compatible with .NET macOS workload
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d /Applications/Xcode_26.0.1.app ]; then
+            sudo xcode-select --switch /Applications/Xcode_26.0.1.app/Contents/Developer
+          elif [ -d /Applications/Xcode_26.0.app ]; then
+            sudo xcode-select --switch /Applications/Xcode_26.0.app/Contents/Developer
+          else
+            echo 'Required Xcode 26.0 not installed; do not bypass SDK version validation.' >&2
+            exit 1
+          fi
+          xcodebuild -version
+      - name: Install macOS SDK workload
+        run: dotnet workload install macos
+      - run: dotnet build src/AuralObservatory.SensorConsole/AuralObservatory.SensorConsole.csproj --configuration Release
