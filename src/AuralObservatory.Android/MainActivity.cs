@@ -101,14 +101,14 @@ public sealed class MainActivity : Activity
         _leftHz = AddNumber(soundPanel, "Pitch / notch center (Hz)", "4000");
         _leftGain = AddNumber(soundPanel, "Gain fraction 0–1", "0.6");
         _leftWidth = AddNumber(soundPanel, "Notch width (octaves)", "1.0");
-        _leftNoise = AddNoisePicker(layout);
+        _leftNoise = AddNoisePicker(soundPanel);
         _leftNotch = AddCheck(soundPanel, "Enable notch", true);
 
         AddText(soundPanel, "RIGHT EAR", 19);
         _rightHz = AddNumber(soundPanel, "Pitch / notch center (Hz)", "6000");
         _rightGain = AddNumber(soundPanel, "Gain fraction 0–1", "0.6");
         _rightWidth = AddNumber(soundPanel, "Notch width (octaves)", "1.0");
-        _rightNoise = AddNoisePicker(layout);
+        _rightNoise = AddNoisePicker(soundPanel);
         _rightNotch = AddCheck(soundPanel, "Enable notch", true);
 
         AddText(soundPanel, "TEMPORAL MODULATION", 19);
@@ -530,10 +530,11 @@ public sealed class MainActivity : Activity
     private LinearLayout AddExpandableSection(LinearLayout parent,string title,bool expanded)
     {
         var section = new LinearLayout(this) { Orientation = Android.Widget.Orientation.Vertical };
-        var button = AddButton(parent,title + (expanded ? " (collapse)" : " (expand)"),()=> {
+        Button? button = null;
+        button = AddButton(parent,title + (expanded ? " (collapse)" : " (expand)"),()=> {
             bool open = section.Visibility == ViewStates.Gone;
             section.Visibility = open ? ViewStates.Visible : ViewStates.Gone;
-            button.Text = title + (open ? " (collapse)" : " (expand)");
+            button!.Text = title + (open ? " (collapse)" : " (expand)");
             button.ContentDescription = button.Text;
         });
         button.ContentDescription = button.Text;
