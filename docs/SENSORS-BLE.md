@@ -14,7 +14,7 @@ The Bluetooth implementation uses the MIT-licensed `InTheHand.BluetoothLE` 4.0.4
 With .NET 10 SDK installed, from repository root:
 
 ```powershell
-# Wear the strap; moisten electrodes; enable Bluetooth; select the HRM from the system device picker.
+# Wear the strap; moisten electrodes; enable Bluetooth; select the HRM from the numbered nearby-device list.
 dotnet run --project src/AuralObservatory.SensorConsole/AuralObservatory.SensorConsole.csproj
 # To persist explicit, local physiological observations (not committed to Git):
 dotnet run --project src/AuralObservatory.SensorConsole/AuralObservatory.SensorConsole.csproj -- --csv "$env:USERPROFILE\\Documents\\aural-hrm-local.csv"
