@@ -19,7 +19,7 @@ var currentAudioId = 0;
 var currentInputMode = QuietInputMode.HoldWhenQuiet;
 var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AuralObservatory");
 Directory.CreateDirectory(dataDir);
-var logPath = Path.Combine(dataDir, "quiet_search.csv");
+var logPath = Path.Combine(dataDir, "quiet_search_r7.csv");
 app.Use(async (ctx, next) =>
 {
     ctx.Response.Headers.CacheControl = "no-store";
