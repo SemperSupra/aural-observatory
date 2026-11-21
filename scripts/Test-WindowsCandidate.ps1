@@ -12,38 +12,51 @@ function Invoke-ExpectedSuccess([string]$Command, [string]$Phase) {
     if ($proc.ExitCode -ne 0) { throw "$Phase exited $($proc.ExitCode)" }
 }
 function Test-InstalledDesktopSession([string]$Executable) {
-    $stdout = Join-Path $env:TEMP ("aural-session-" + [guid]::NewGuid().ToString('N') + ".stdout.log")
-    $stderr = $stdout.Replace(".stdout.log", ".stderr.log")
     $process = $null
     try {
-        $process = Start-Process -FilePath $Executable -ArgumentList '--no-browser' -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+        # Read the live child's stdout via a pipe. Redirecting to a file and reading
+        # concurrently is unreliable on Windows because the writer can deny sharing.
+        $start = New-Object System.Diagnostics.ProcessStartInfo
+        $start.FileName = $Executable
+        $start.Arguments = '--no-browser'
+        $start.UseShellExecute = $false
+        $start.CreateNoWindow = $true
+        $start.RedirectStandardOutput = $true
+        $start.RedirectStandardError = $true
+        $process = New-Object System.Diagnostics.Process
+        $process.StartInfo = $start
+        if (!$process.Start()) { throw 'Installed executable process did not start' }
+        $deadline = [DateTime]::UtcNow.AddSeconds(40)
         $url = $null
-        for ($i=0; $i -lt 45; $i++) {
-            if ($process.HasExited) { throw "Installed app exited before startup with code $($process.ExitCode)" }
-            if (Test-Path $stdout) {
-                $printed = [IO.File]::ReadAllText($stdout)
-                $match = [regex]::Match($printed, 'Aural Observatory local session:\s+(http://127\.0\.0\.1:\d+)')
-                if ($match.Success) { $url = $match.Groups[1].Value; break }
-            }
-            Start-Sleep -Milliseconds 500
+        while ([DateTime]::UtcNow -lt $deadline) {
+            $remaining = [Math]::Max(1, [int]($deadline - [DateTime]::UtcNow).TotalMilliseconds)
+            $lineTask = $process.StandardOutput.ReadLineAsync()
+            if (!$lineTask.Wait($remaining)) { throw 'Timed out waiting for actual loopback listener' }
+            $line = $lineTask.Result
+            if ($null -eq $line) { break }
+            $match = [regex]::Match($line, 'Aural Observatory local session:\s+(http://127\.0\.0\.1:\d+)')
+            if ($match.Success) { $url = $match.Groups[1].Value; break }
         }
-        if (!$url) { throw "Installed app did not report a local HTTP endpoint" }
+        if (!$url) { throw "Installed app did not publish its local URL (exit=$($process.ExitCode))" }
         $root = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 15
         if ($root.StatusCode -ne 200 -or !$root.Content.Contains('id="quiet"')) {
-            throw "Installed app did not serve expected interactive UI"
+            throw 'Installed app did not serve the expected interactive HTML'
         }
         $tokenMatch = [regex]::Match($root.Content, "const token = '([A-Fa-f0-9]{64})';")
-        if (!$tokenMatch.Success) { throw "Session token not found in the locally served UI" }
+        if (!$tokenMatch.Success) { throw 'Token missing from local browser session' }
         $headers = @{ 'X-Aural-Token' = $tokenMatch.Groups[1].Value }
-        # Token never appears in CI logs or uploaded artifacts.
+        # Never write the ephemeral token to a log or artifact.
         $response = Invoke-RestMethod -Method Post -Uri ($url + '/api/exit') -Headers $headers -ContentType 'application/json' -Body '{}' -TimeoutSec 15
-        if (!$response.stopping) { throw 'Local desktop shutdown action was not accepted' }
-        if (!$process.WaitForExit(15000)) { throw 'Installed desktop process did not stop after requested exit' }
-        if ($process.ExitCode -ne 0) { throw "Desktop exited with $($process.ExitCode)" }
-        Write-Host 'PASS: installed desktop served its real local UI, authenticated exit and released the host'
-    } finally {
-        if ($process -and !$process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
-        Remove-Item $stdout, $stderr -Force -ErrorAction SilentlyContinue
+        if (!$response.stopping) { throw 'Authenticated application-exit action rejected' }
+        if (!$process.WaitForExit(15000)) { throw 'Installed desktop did not terminate after exit' }
+        if ($process.ExitCode -ne 0) { throw "Installed desktop terminated abnormally ($($process.ExitCode))" }
+        Write-Host 'PASS: installed desktop started real local UI and exited after token-authorized request'
+    }
+    finally {
+        if ($process) {
+            if (!$process.HasExited) { $process.Kill(); [void]$process.WaitForExit(5000) }
+            $process.Dispose()
+        }
     }
 }
 if (Test-Path $exe) { throw 'Preflight: non-clean test user profile; refusing to overwrite it' }
