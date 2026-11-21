@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <ApplicationId Condition="$([MSBuild]::IsOSPlatform('OSX'))">org.sempersupra.auralobservatory.sensordiag</ApplicationId>
     <TargetFramework Condition="$([MSBuild]::IsOSPlatform('Windows'))">net10.0-windows10.0.19041.0</TargetFramework>
     <TargetFramework Condition="$([MSBuild]::IsOSPlatform('OSX'))">net10.0-macos</TargetFramework>
     <TargetFramework Condition="!$([MSBuild]::IsOSPlatform('Windows')) and !$([MSBuild]::IsOSPlatform('OSX'))">net10.0</TargetFramework>
