@@ -58,3 +58,9 @@ MIT for new original code. Prior third-party project implementations and commerc
 ## Live HRM plugin
 
 The sensor modules target Garmin HRM-Pro Plus or any compliant standard BLE chest strap; the generic 0x2A37 decoder accepts heart-rate-only measurements and optional RR intervals. Follow [docs/SENSORS-BLE.md](docs/SENSORS-BLE.md) for Windows PowerShell 5.1 compatible `dotnet run` commands, Android permission behavior, Mac status, opt-in recording, quality gates and privacy conditions. **Do not buy another strap until Garmin HRM-Pro Plus RR delivery is tested.**
+
+## R7: alternative feedback modes + candidate packages
+
+The Quiet Search now offers hold-when-quiet, hold-while-audible/release-when-quiet (explicitly armed, no default quiet), and tap-to-toggle. Input modes apply to mouse/keyboard/touch or native Android controls, and the R7 journal includes the selected mode in a new file. No change to gain or claim of tinnitus detection.
+
+Public `.github/workflows/package-candidates.yml` requests standard free hosted runners for native Android debug APK, portable Linux/macOS/Windows desktop bundles and an unsigned user-scoped Windows NSIS installer candidate. These are qualification artifacts only, not signed production installers or F-Droid/Play/WinGet releases. Release admission remains with Android Publishing Foundry and Windows Package Foundry and requires explicit owner review; see `docs/QUIET-MODES-AND-PACKAGING-R7.md`.
