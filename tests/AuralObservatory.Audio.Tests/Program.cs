@@ -76,7 +76,7 @@ File.WriteAllText("artifacts/audio/synthetic-spectra.json",
 Console.WriteLine("PASS: generated artifacts/audio/synthetic-spectra.json");
 Console.WriteLine("PASS: all synthetic DSP qualification assertions (headphone SPL NOT measured).");
 
-static (double[] left, double[] right, double peak) Render(StimulusSettings s)
+(double[] left, double[] right, double peak) Render(StimulusSettings s)
 {
     var engine = new StimulusEngine(s);
     var l=new double[frames]; var r=new double[frames];var block=new short[2048];
@@ -93,7 +93,7 @@ static (double[] left, double[] right, double peak) Render(StimulusSettings s)
     }
     return (l,r,peak);
 }
-static double Power(double[] signal, double hz)
+double Power(double[] signal, double hz)
 {
     int k=(int)Math.Round(hz*n/sr); double coeff=2*Math.Cos(2*Math.PI*k/n);
     double total=0;int count=0;
