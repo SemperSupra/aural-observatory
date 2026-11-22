@@ -2,6 +2,10 @@
 
 **Authority:** [Aural issue #5](https://github.com/SemperSupra/aural-observatory/issues/5); R12 desktop spatial controller PR #29, R13 mobile #30, R14 corrected keyboard focus #36. This work is stacked on #36 and intentionally preserves existing C# DSP, study scoring, token-authenticated routes and STOP handlers. No main merge, actual acoustic exposure, deployment, or clinical approval.
 
+## Research-grounded interaction choice
+
+See **[R15 card usability research and controlled A/B protocol](R15-CARD-USABILITY-RESEARCH.md)**. Aural uses *tabbed workspaces with card-like grouped content*, **not** a horizontal swipe carousel: the private Open Space Duel carousel serves as an inspiration for visible navigation and persistent controls, not proof of superior usability. WAI-ARIA APG tabs keyboard wraparound has been implemented and tested. Empirical research favors different scrolling/paging mechanisms for different tasks; no Aural human task-performance advantage has been demonstrated yet. Do not remove in-panel normal vertical scrolling or hide live status/STOP to optimize scroll metrics.
+
 ## Source-grounded pattern and implementation
 
 The private Open Space Duel `mark-e-deyoung/open-space-duel-private/src/ui/menu.ts` implements a 4-card horizontally navigable carousel, 44px next/previous actions, position indicators, compact-landscape adjustment and an always accessible bottom action bar. **We reuse the interaction pattern, not its private source or art.** Aural's navigation uses genuine native tab semantics for equivalent keyboard and assistive-technology behavior, with one visible workspace at a time and source-owned sections moved rather than cloned.
