@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#14242c">
+  <meta name="description" content="Aural Observatory: local-first acoustic research interface. Public visual PWA preview; no audio or personal data collection.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="canonical" href="https://sempersupra.github.io/aural-observatory/">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <title>Aural Observatory — visual PWA preview</title>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<header class="topbar">
+  <a href="./" class="brand" aria-label="Aural Observatory home"><img src="./mark.svg" alt="" width="40" height="40"><span>Aural <strong>Observatory</strong></span></a>
+  <nav aria-label="Site"><a href="#workspace">Workspace</a><a href="#scope">Capabilities</a><a href="#principles">Method</a></nav>
+  <fieldset class="themes"><legend>Theme</legend>
+    <label title="System"><input type="radio" name="theme" value="system" checked><span aria-hidden="true">▣</span><span class="sr">System</span></label>
+    <label title="Light"><input type="radio" name="theme" value="light"><span aria-hidden="true">☼</span><span class="sr">Light</span></label>
+    <label title="Dark"><input type="radio" name="theme" value="dark"><span aria-hidden="true">☾</span><span class="sr">Dark</span></label>
+  </fieldset>
+</header>
+<main id="main" tabindex="-1">
+  <div class="eyebrow">RESEARCH INSTRUMENT / PUBLIC PREVIEW</div>
+  <section class="hero" aria-labelledby="hero-title">
+    <div>
+      <h1 id="hero-title">Explore a sound source.<br><em>Retain control.</em></h1>
+      <p>Aural Observatory is an experimental, local-first acoustic research project. This public preview demonstrates the interface language and spatial controls only. It does not play sound, collect observations, or offer treatment.</p>
+      <p class="statusline"><strong>Visual preview only</strong> · Sound output unavailable · No account or telemetry</p>
+      <a href="#workspace" class="primary">Explore the controls <span aria-hidden="true">↓</span></a>
+    </div>
+    <div class="art" aria-hidden="true"><div class="ring ring1"></div><div class="ring ring2"></div><div class="ring ring3"></div><div class="origin"></div><div class="beam"></div></div>
+  </section>
+  <section id="workspace" class="panel" aria-labelledby="workspace-title">
+    <div class="section-head"><div><div class="eyebrow">01 / HUMAN INTERFACE</div><h2 id="workspace-title">Spatial control preview</h2></div><span class="pill">INPUT ONLY</span></div>
+    <p>Move these sliders by touch, keyboard, or pointer. Values are a visual demonstration, not commands to an audio device or an experiment.</p>
+    <div class="workspace">
+      <div class="plot" role="img" aria-label="Decorative spatial orbit, controlled values are also stated in text">
+        <div class="plot-axis axis-h"></div><div class="plot-axis axis-v"></div><div class="orbit orbit-outer"></div><div class="orbit orbit-inner"></div><div class="plot-center">CENTER</div><div class="source-dot" id="source-dot"></div>
+      </div>
+      <div class="controls">
+        <label for="azimuth">Azimuth <output id="azimuth-value" for="azimuth">0°</output></label><input id="azimuth" type="range" min="-180" max="180" value="0" step="5">
+        <label for="elevation">Elevation <output id="elevation-value" for="elevation">0°</output></label><input id="elevation" type="range" min="-45" max="45" value="0" step="5">
+        <label for="distance">Relative distance <output id="distance-value" for="distance">1.0×</output></label><input id="distance" type="range" min="1" max="3" value="1" step=".1">
+        <button type="button" id="reset" class="stop">STOP / RESET VISUAL PREVIEW</button>
+        <p id="feedback" role="status" aria-live="polite">Ready. No audio output is available on this page.</p>
+      </div>
+    </div>
+  </section>
+  <section id="scope" class="panel" aria-labelledby="scope-title">
+    <div class="eyebrow">02 / RELEASE BOUNDARY</div><h2 id="scope-title">What this preview proves—and does not</h2>
+    <div class="facts">
+      <article><h3>Web / PWA</h3><p>Responsive presentation, offline application shell, system/light/dark appearance, keyboard and touch-accessible native controls.</p></article>
+      <article><h3>Native Android</h3><p>Separately developed native Views/AudioTrack application. This web site is not an Android WebView substitute.</p></article>
+      <article><h3>Audio research</h3><p>Standalone browser DSP parity, calibrated headphone exposure, actual-device STOP and experimental outcome quality remain release gates.</p></article>
+    </div>
+  </section>
+  <section id="principles" class="panel" aria-labelledby="principles-title">
+    <div class="eyebrow">03 / THREE AUDIENCES</div><h2 id="principles-title">One authority, different interfaces</h2>
+    <p>Humans use a deliberately bounded interface. Deterministic automation uses versioned tests and public source artifacts. Agents use the same published facts and cannot initiate acoustic exposure without local human authorization.</p>
+    <p>Repository source and qualification: <a class="external" href="https://github.com/SemperSupra/aural-observatory" target="_blank" rel="noopener noreferrer">Aural Observatory on GitHub <span aria-hidden="true">↗</span><span class="sr"> (opens in a new tab)</span></a>.</p>
+  </section>
+</main>
+<footer><span>Aural Observatory · SemperSupra · Experimental software, not a medical device</span><span>Visual-only preview · no recording · no remote control</span></footer>
+<noscript><p class="noscript">This page's information is available without JavaScript. Interactive slider readouts, theme preferences and offline caching require JavaScript.</p></noscript>
+</body>
+</html>
