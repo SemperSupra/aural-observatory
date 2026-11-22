@@ -45,7 +45,7 @@
     status.textContent = "Window focus changed. No audio playback or remote controls exist.";
   });
   render();
-  if ("serviceWorker" in navigator && location.protocol === "https:") {
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || ["localhost", "127.0.0.1"].includes(location.hostname))) {
     window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js", {scope:"./"}).catch(() => {}));
   }
 })();
