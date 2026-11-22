@@ -135,6 +135,10 @@ async function run(){
  assert.equal(await page.locator('#manual-sound').evaluate(x=>x.paused),true,'gamepad discovery cannot start playback');
  await page.evaluate(()=>{window.__syntheticGamepad.axes[0]=0.8;});
  await page.waitForFunction(()=>Number(document.querySelector('#spatial-azimuth').value)>5,null,{timeout:5000});
+ await page.waitForFunction(()=>document.querySelector('#spatial-gamepad-diagnostics').textContent.includes('0:0.80'),null,{timeout:5000});
+ const beforeInversion=Number(await page.locator('#spatial-azimuth').inputValue());
+ await page.locator('#spatial-invert-yaw').check();
+ await page.waitForFunction(before=>Number(document.querySelector('#spatial-azimuth').value)<before-2,beforeInversion,{timeout:5000});
  await page.evaluate(()=>{window.__syntheticGamepad.axes[0]=0;window.__syntheticGamepad.buttons[1]={pressed:true,value:1};});
  await page.waitForFunction(()=>document.querySelector('#spatial-status').textContent.includes('Gamepad STOP requested'),null,{timeout:5000});
  assert.equal(await page.locator('#manual-sound').evaluate(x=>x.paused),true,'gamepad STOP leaves manual player paused');
@@ -161,7 +165,7 @@ async function run(){
  assert.deepEqual(critical.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.length})),[],'No serious/critical automated accessibility violations');
  assert.deepEqual(fatal,[],'No uncaught page errors');
  const evidence={schemaVersion:1,scope:'synthetic desktop browser',browser:'Chromium headless',
-   platform:process.platform,at:new Date().toISOString(),checks:['ear-editor','input-bounds','corrected-noise-selection','theme','scale','contrast','persist','presets','manual-sweep-bounds','authenticated-WAV-blob','manual-stop','spatial-virtual-dual-sticks','spatial-actions-A-B-X-Y','spatial-HRTF-opt-in','spatial-ear-isolation','spatial-gamepad-synthetic','spatial-no-autoplay','320px-reflow','axe-automated-WCAG21'],
+   platform:process.platform,at:new Date().toISOString(),checks:['ear-editor','input-bounds','corrected-noise-selection','theme','scale','contrast','persist','presets','manual-sweep-bounds','authenticated-WAV-blob','manual-stop','spatial-virtual-dual-sticks','spatial-actions-A-B-X-Y','spatial-HRTF-opt-in','spatial-ear-isolation','spatial-gamepad-synthetic','spatial-legacy-diagnostics-inversion','spatial-no-autoplay','320px-reflow','axe-automated-WCAG21'],
    automatedViolations:report.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.length})),
    manualScreenReaderVerified:false,physicalAudioVerified:false};
  const target=path.join(repo,'artifacts','ui');
