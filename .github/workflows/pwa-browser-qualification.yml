@@ -12,7 +12,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: aural-r14-pwa-browser
+  group: aural-r14-pwa-browser-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   browser:
