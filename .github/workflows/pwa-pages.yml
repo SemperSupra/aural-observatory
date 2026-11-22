@@ -1,0 +1,44 @@
+name: Deploy visual-only PWA preview to GitHub Pages
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/pwa-pages.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: aural-pwa-pages-production
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - run: node --test web/tests/*.test.mjs
+      - name: Verify no personal/audio payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find web -type f \( -iname '*.csv' -o -iname '*.key' -o -iname '*.pem' -o -iname '*.p12' -o -iname '*.sqlite' -o -iname '*.wav' -o -iname '*.mp3' \) | grep .; then exit 1; fi
+  deploy:
+    needs: validate
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: https://sempersupra.github.io/aural-observatory/
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+        with:
+          path: web
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
