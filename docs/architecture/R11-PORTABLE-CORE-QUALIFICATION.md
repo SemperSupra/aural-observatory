@@ -37,7 +37,7 @@ Human/automation/agent are **three audiences, not three implementations**: seman
 
 - `aural_kernel_api_version() -> uint32_t`; reject unknown version/struct length.
 - `aural_kernel_create(config*, handle**) -> status`; config immutable, validated before any output.
-- `aural_kernel_render(handle*, int16_t* interleaved_stereo, uint32_t frames) -> status`; no allocations/syscalls/logging in render, bounded frames, caller-owned output, zero on end/stop/failure; no implicit device control.
+- `aural_kernel_render(handle*, int16_t* interleaved_stereo, uint32_t frames, uint32_t capacity_samples) -> status`; no allocations/syscalls/logging in render, bounded frames, caller-owned output and capacity checks. After STOP/end, valid render calls fill silence. On **invalid pointer/capacity**, return a typed failure **without writing** to an untrusted buffer; the owning OS audio adapter must explicitly mute/clear its own known-valid device buffer on any error. No implicit device control.
 - `aural_kernel_stop(handle*) -> status`; idempotent, fail closed.
 - `aural_kernel_destroy(handle*)`; ownership explicit, no use after destroy.
 - `aural_kernel_measure_notch(centerHz,widthOctaves,sampleRate, result*) -> status`; pure numerical oracle may be a separate symbol.
