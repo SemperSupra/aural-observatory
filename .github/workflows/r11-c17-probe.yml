@@ -1,0 +1,39 @@
+name: R11 C17 portable ABI candidate (synthetic, nonproduction)
+on:
+  pull_request:
+    paths:
+      - 'experiments/portable-core/c17/**'
+      - 'experiments/portable-core/fixtures/**'
+      - '.github/workflows/r11-c17-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-compile-and-fixture:
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        os: [ubuntu-24.04, macos-26]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Compile strict portable C17
+        run: cc -std=c17 -O2 -Wall -Wextra -Werror -pedantic experiments/portable-core/c17/aural_r11_kernel.c experiments/portable-core/c17/conformance.c -lm -o aural-r11-c17-check
+      - name: Run frozen cross-language fixtures and bounded PCM tests
+        run: ./aural-r11-c17-check
+  sanitizers-and-abi:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: GCC ASan/UBSan synthetic guard tests
+        run: |
+          gcc -std=c17 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer experiments/portable-core/c17/aural_r11_kernel.c experiments/portable-core/c17/conformance.c -lm -o aural-r11-c17-sanitized
+          ./aural-r11-c17-sanitized
+      - name: Build shared C ABI, observe size and exported symbols
+        run: |
+          cc -std=c17 -O2 -fPIC -shared -Wall -Wextra -Werror experiments/portable-core/c17/aural_r11_kernel.c -lm -o libaural-r11-candidate.so
+          ls -lh libaural-r11-candidate.so
+          nm -D --defined-only libaural-r11-candidate.so | grep 'aural_r11_'
