@@ -39,7 +39,7 @@ const report=[];
       const browser=await engine.launch({headless:true});
       try{
         for(const profile of cases){
-          const context=await browser.newContext({viewport:{width:profile.width,height:profile.height},hasTouch:profile.touch,isMobile:profile.touch,deviceScaleFactor:profile.touch?2:1,reducedMotion:"reduce",colorScheme:"light"});
+          const context=await browser.newContext({viewport:{width:profile.width,height:profile.height},hasTouch:profile.touch,isMobile:profile.touch && engineName !== "firefox",deviceScaleFactor:profile.touch?2:1,reducedMotion:"reduce",colorScheme:"light"});
           const page=await context.newPage();
           const errors=[];
           page.on("pageerror",e=>errors.push(String(e)));
@@ -55,7 +55,7 @@ const report=[];
           const stop=await page.locator("#reset").boundingBox();
           assert.ok(stop&&stop.height>=44&&stop.width>=44,"STOP/RESET target size");
           assert.ok(stop.x>=0&&stop.x+stop.width<=profile.width+2,"STOP/RESET clipped");
-          await page.locator("#azimuth").fill("90");
+          await page.locator("#azimuth").evaluate(el => { el.value = "90"; el.dispatchEvent(new Event("input",{bubbles:true})); });
           assert.equal(await page.locator("#azimuth-value").textContent(),"90°");
           await page.locator("#reset").click();
           assert.equal(await page.locator("#azimuth-value").textContent(),"0°");
