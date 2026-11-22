@@ -54,6 +54,7 @@ async function run(){
  assert.equal(await page.locator('#left-colour').inputValue(),'5');
  assert.equal(await page.locator('#right-colour').inputValue(),'6');
  assert.equal(await page.locator('#sound').evaluate(x=>x.autoplay),false);
+ await page.locator('#deck-tab-settings').click();
  await page.locator('#theme').selectOption('2');
  assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
  await page.locator('#font-size').evaluate(x=>{x.value='150';x.dispatchEvent(new Event('change',{bubbles:true}));});
@@ -70,13 +71,16 @@ async function run(){
  await page.locator('#preset-name').fill('CI Synthetic Profile');
  await page.locator('#save-preset').click();
  await page.waitForFunction(()=>Array.from(document.querySelector('#presets').options).some(o=>o.text==='CI Synthetic Profile'),null,{timeout:5000});
+ await page.locator('#deck-tab-sound').click();
  await page.locator('#left-hz').fill('5200');
  await page.locator('#save-audio').click();
  await page.waitForFunction(()=>document.querySelector('#audio-config-status').textContent.includes('Profile saved'),null,{timeout:5000});
+ await page.locator('#deck-tab-settings').click();
  await page.locator('#presets').selectOption({label:'CI Synthetic Profile'});
  await page.locator('#load-preset').click();
  await page.waitForFunction(()=>document.querySelector('#left-hz').value==='4300',null,{timeout:5000});
  assert.equal(await page.locator('#left-hz').inputValue(),'4300');
+ await page.locator('#deck-tab-spatial').click();
  // R10: real C# WAV generation through authenticated API; no browser DSP, no study-score mutation.
  await page.locator('#manual-seconds').fill('120');
  await page.locator('#manual-start').click();
@@ -156,6 +160,7 @@ async function run(){
  await page.setViewportSize({width:320,height:700});
  const bounds=await page.evaluate(()=>({vw:window.innerWidth,sw:document.documentElement.scrollWidth}));
  assert.ok(bounds.sw<=bounds.vw+2,'No horizontal scrolling at 320 CSS px: '+JSON.stringify(bounds));
+ await page.locator('#deck-tab-settings').click();
  await page.locator('#theme').selectOption('1');
  await page.locator('#high-contrast').uncheck();
  await page.locator('#save-prefs').click();
