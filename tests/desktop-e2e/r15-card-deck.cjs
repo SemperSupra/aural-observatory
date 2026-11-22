@@ -68,6 +68,17 @@ const cases=[
    assert.equal(await page.locator('#deck-tab-sound').getAttribute('aria-selected'),'true');
    await page.keyboard.press('ArrowRight');
    assert.equal(await page.locator('#deck-tab-spatial').getAttribute('aria-selected'),'true');
+   await page.keyboard.press('ArrowLeft');
+   assert.equal(await page.locator('#deck-tab-sound').getAttribute('aria-selected'),'true');
+   await page.keyboard.press('ArrowLeft');
+   assert.equal(await page.locator('#deck-tab-settings').getAttribute('aria-selected'),'true','Left wraps first to last');
+   await page.keyboard.press('ArrowRight');
+   assert.equal(await page.locator('#deck-tab-sound').getAttribute('aria-selected'),'true','Right wraps last to first');
+   await page.keyboard.press('End');
+   assert.equal(await page.locator('#deck-tab-settings').getAttribute('aria-selected'),'true');
+   await page.keyboard.press('Home');
+   assert.equal(await page.locator('#deck-tab-sound').getAttribute('aria-selected'),'true');
+   await page.locator('#deck-tab-spatial').click();
    // Simulated in-progress state: switching cards is forbidden before STOP.
    await page.locator('#manual-start').evaluate(x=>x.disabled=true);
    await page.locator('#deck-tab-search').click();
