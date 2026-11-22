@@ -98,7 +98,9 @@ async function run(){
  assert.equal(await page.locator('#spatial-enable').isChecked(),false,'3D sound movement never starts automatically');
  assert.equal(await page.locator('#manual-sound').evaluate(x=>x.paused),true,'spatial UI never autoplays');
  await page.locator('#manual-ear').selectOption('Left');
- await page.locator('#spatial-enable').check();
+ // The app must undo a disallowed opt-in; Playwright .check() would fail
+ // because it expects the checkbox to remain checked after the click.
+ await page.locator('#spatial-enable').click();
  await page.waitForFunction(()=>document.querySelector('#spatial-status').textContent.includes('requires the unscored'),null,{timeout:5000});
  assert.equal(await page.locator('#spatial-enable').isChecked(),false,'ear-isolated trial cannot enter binaural panner');
  await page.locator('#manual-ear').selectOption('Both');
