@@ -53,7 +53,7 @@ async function run(){
  assert.equal(await page.locator('#right-hz').inputValue(),'6100');
  assert.equal(await page.locator('#left-colour').inputValue(),'5');
  assert.equal(await page.locator('#right-colour').inputValue(),'6');
- assert.equal(await page.locator('audio').evaluate(x=>x.autoplay),false);
+ assert.equal(await page.locator('#sound').evaluate(x=>x.autoplay),false);
  await page.locator('#theme').selectOption('2');
  assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
  await page.locator('#font-size').evaluate(x=>{x.value='150';x.dispatchEvent(new Event('change',{bubbles:true}));});
@@ -77,6 +77,23 @@ async function run(){
  await page.locator('#load-preset').click();
  await page.waitForFunction(()=>document.querySelector('#left-hz').value==='4300',null,{timeout:5000});
  assert.equal(await page.locator('#left-hz').inputValue(),'4300');
+ // R10: real C# WAV generation through authenticated API; no browser DSP, no study-score mutation.
+ await page.locator('#manual-seconds').fill('120');
+ await page.locator('#manual-start').click();
+ await page.waitForFunction(()=>document.querySelector('#manual-sweep-status').textContent.includes('Sweep rejected'),null,{timeout:10000});
+ await page.locator('#manual-seconds').fill('8');
+ await page.locator('#manual-mode').selectOption('ReferenceTone');
+ await page.locator('#manual-ear').selectOption('Left');
+ await page.locator('#manual-start').click();
+ await page.waitForFunction(()=>document.querySelector('#manual-sound').src.startsWith('blob:'),null,{timeout:30000});
+ const sweepSrc=await page.locator('#manual-sound').getAttribute('src');
+ assert.ok(sweepSrc.startsWith('blob:'),'Manual sweep served as a token-authenticated local Blob URL');
+ assert.ok(!sweepSrc.includes('token='),'Manual media URL contains no query credential');
+ assert.equal(await page.locator('#manual-mark').isDisabled(),false,'Subjective frequency-mark control becomes available when prepared');
+ assert.equal(await page.locator('#sound').getAttribute('src'),null,'Randomized quiet-search player remains untouched');
+ await page.locator('#manual-stop').click();
+ await page.waitForFunction(()=>document.querySelector('#manual-sweep-status').textContent.includes('stopped'),null,{timeout:10000});
+ assert.equal(await page.locator('#manual-start').isDisabled(),false,'Manual sweep available after stop');
  await page.setViewportSize({width:320,height:700});
  const bounds=await page.evaluate(()=>({vw:window.innerWidth,sw:document.documentElement.scrollWidth}));
  assert.ok(bounds.sw<=bounds.vw+2,'No horizontal scrolling at 320 CSS px: '+JSON.stringify(bounds));
@@ -89,7 +106,7 @@ async function run(){
  assert.deepEqual(critical.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.length})),[],'No serious/critical automated accessibility violations');
  assert.deepEqual(fatal,[],'No uncaught page errors');
  const evidence={schemaVersion:1,scope:'synthetic desktop browser',browser:'Chromium headless',
-   platform:process.platform,at:new Date().toISOString(),checks:['ear-editor','input-bounds','corrected-noise-selection','theme','scale','contrast','persist','presets','320px-reflow','axe-automated-WCAG21'],
+   platform:process.platform,at:new Date().toISOString(),checks:['ear-editor','input-bounds','corrected-noise-selection','theme','scale','contrast','persist','presets','manual-sweep-bounds','authenticated-WAV-blob','manual-stop','320px-reflow','axe-automated-WCAG21'],
    automatedViolations:report.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.length})),
    manualScreenReaderVerified:false,physicalAudioVerified:false};
  const target=path.join(repo,'artifacts','ui');
