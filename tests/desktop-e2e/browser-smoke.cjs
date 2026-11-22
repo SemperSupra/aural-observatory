@@ -94,6 +94,49 @@ async function run(){
  await page.locator('#manual-stop').click();
  await page.waitForFunction(()=>document.querySelector('#manual-sweep-status').textContent.includes('stopped'),null,{timeout:10000});
  assert.equal(await page.locator('#manual-start').isDisabled(),false,'Manual sweep available after stop');
+ // R12: real Chromium controller UI + local Web Audio spatial adapter; synthetic data only.
+ assert.equal(await page.locator('#spatial-enable').isChecked(),false,'3D sound movement never starts automatically');
+ assert.equal(await page.locator('#manual-sound').evaluate(x=>x.paused),true,'spatial UI never autoplays');
+ await page.locator('#manual-ear').selectOption('Left');
+ await page.locator('#spatial-enable').check();
+ await page.waitForFunction(()=>document.querySelector('#spatial-status').textContent.includes('requires the unscored'),null,{timeout:5000});
+ assert.equal(await page.locator('#spatial-enable').isChecked(),false,'ear-isolated trial cannot enter binaural panner');
+ await page.locator('#manual-ear').selectOption('Both');
+ await page.locator('#spatial-enable').check();
+ await page.waitForFunction(()=>document.querySelector('#spatial-status').textContent.includes('enabled for manual'),null,{timeout:5000});
+ assert.equal(await page.locator('#manual-sound').evaluate(x=>x.paused),true,'enabling panner cannot start playback');
+ await page.locator('#spatial-azimuth').evaluate(x=>{x.value='90';x.dispatchEvent(new Event('input',{bubbles:true}));});
+ assert.equal(await page.locator('#spatial-value-azimuth').innerText(),'90°');
+ await page.locator('#spatial-pad').focus();
+ await page.keyboard.press('ArrowLeft');
+ assert.equal(await page.locator('#spatial-value-azimuth').innerText(),'85°','keyboard changes position');
+ await page.locator('#spatial-center').click();
+ assert.equal(await page.locator('#spatial-value-azimuth').innerText(),'0°','center restores front');
+ // CDP browser API shim is only a synthetic input fixture; NO real USB claim.
+ await page.evaluate(()=>{
+   window.__syntheticGamepad={index:0,id:'Synthetic Xbox controller',mapping:'standard',
+     axes:[0,0,0,0],buttons:Array.from({length:17},()=>({pressed:false,value:0}))};
+   Object.defineProperty(navigator,'getGamepads',{configurable:true,value:()=>[window.__syntheticGamepad]});
+   window.dispatchEvent(new Event('gamepadconnected'));
+ });
+ await page.locator('#spatial-use-gamepad').check();
+ await page.waitForFunction(()=>document.querySelector('#spatial-gamepad-status').textContent.includes('Synthetic Xbox controller'),null,{timeout:5000});
+ assert.equal(await page.locator('#manual-sound').evaluate(x=>x.paused),true,'gamepad discovery cannot start playback');
+ await page.evaluate(()=>{window.__syntheticGamepad.axes[0]=0.8;});
+ await page.waitForFunction(()=>Number(document.querySelector('#spatial-azimuth').value)>5,null,{timeout:5000});
+ await page.evaluate(()=>{window.__syntheticGamepad.axes[0]=0;window.__syntheticGamepad.buttons[1]={pressed:true,value:1};});
+ await page.waitForFunction(()=>document.querySelector('#spatial-status').textContent.includes('Gamepad STOP requested'),null,{timeout:5000});
+ assert.equal(await page.locator('#manual-sound').evaluate(x=>x.paused),true,'gamepad STOP leaves manual player paused');
+ await page.locator('#spatial-use-gamepad').uncheck();
+ // Spatial preview still uses the original C#-generated WAV, never randomized study scoring.
+ await page.locator('#manual-start').click();
+ await page.waitForFunction(()=>document.querySelector('#manual-sound').src.startsWith('blob:'),null,{timeout:30000});
+ assert.equal(await page.locator('#sound').getAttribute('src'),null,'spatial preview never writes randomized trial audio');
+ await page.locator('#manual-stop').click();
+ await page.waitForFunction(()=>document.querySelector('#manual-sweep-status').textContent.includes('stopped'),null,{timeout:10000});
+ const visualDir=path.join(repo,'artifacts','ui');
+ fs.mkdirSync(visualDir,{recursive:true});
+ await page.locator('#spatial-controller').screenshot({path:path.join(visualDir,'r12-spatial-controller.png'),animations:'disabled'});
  await page.setViewportSize({width:320,height:700});
  const bounds=await page.evaluate(()=>({vw:window.innerWidth,sw:document.documentElement.scrollWidth}));
  assert.ok(bounds.sw<=bounds.vw+2,'No horizontal scrolling at 320 CSS px: '+JSON.stringify(bounds));
@@ -106,7 +149,7 @@ async function run(){
  assert.deepEqual(critical.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.length})),[],'No serious/critical automated accessibility violations');
  assert.deepEqual(fatal,[],'No uncaught page errors');
  const evidence={schemaVersion:1,scope:'synthetic desktop browser',browser:'Chromium headless',
-   platform:process.platform,at:new Date().toISOString(),checks:['ear-editor','input-bounds','corrected-noise-selection','theme','scale','contrast','persist','presets','manual-sweep-bounds','authenticated-WAV-blob','manual-stop','320px-reflow','axe-automated-WCAG21'],
+   platform:process.platform,at:new Date().toISOString(),checks:['ear-editor','input-bounds','corrected-noise-selection','theme','scale','contrast','persist','presets','manual-sweep-bounds','authenticated-WAV-blob','manual-stop','spatial-virtual-pad','spatial-HRTF-opt-in','spatial-ear-isolation','spatial-gamepad-synthetic','spatial-no-autoplay','320px-reflow','axe-automated-WCAG21'],
    automatedViolations:report.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.length})),
    manualScreenReaderVerified:false,physicalAudioVerified:false};
  const target=path.join(repo,'artifacts','ui');
