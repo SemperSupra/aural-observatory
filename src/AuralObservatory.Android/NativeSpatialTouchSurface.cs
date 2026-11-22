@@ -68,16 +68,18 @@ public sealed class NativeSpatialTouchSurface : View
         canvas.DrawLine(middle, 0, middle, Height, stroke);
         canvas.DrawText("LEFT: direction", 10f * density, 24f * density, label);
         canvas.DrawText("RIGHT: height / distance", middle + 10f * density, 24f * density, label);
-        DrawPad(canvas, stroke, knob, _directionPointer, _directionOrigin, _directionCurrent, density);
-        DrawPad(canvas, stroke, knob, _heightPointer, _heightOrigin, _heightCurrent, density);
+        // Use exactly the reducer's view-relative radius for honest UI feedback.
+        float radius = Math.Clamp(Math.Min(Width * .5f, Height) * .32f, 40f, 76f);
+        DrawPad(canvas, stroke, knob, _directionPointer, _directionOrigin, _directionCurrent, radius, density);
+        DrawPad(canvas, stroke, knob, _heightPointer, _heightOrigin, _heightCurrent, radius, density);
     }
 
     private static void DrawPad(Canvas canvas, Paint outline, Paint dot, int? pointer,
-        PointF origin, PointF current, float density)
+        PointF origin, PointF current, float radius, float density)
     {
         if (!pointer.HasValue) return;
-        canvas.DrawCircle(origin.X, origin.Y, 54f * density, outline);
-        canvas.DrawCircle(current.X, current.Y, 20f * density, dot);
+        canvas.DrawCircle(origin.X, origin.Y, radius, outline);
+        canvas.DrawCircle(current.X, current.Y, Math.Min(20f * density, radius * .35f), dot);
     }
 
     public override bool OnTouchEvent(MotionEvent? e)
