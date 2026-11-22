@@ -12,7 +12,7 @@ The current **single C# DSP core is an engine boundary**, not an admitted three-
 
 | Lane | Audience / scenario | Qualification venue | What is NOT proven |
 |---|---|---|---|
-| R14-J journey/evidence baseline (this PR) | Human/Automation/Agent goals, steps, positive/negative oracles, authority + 11 platform channels | 3-OS pure Python stdlib manifest linter; JSON + Markdown reports | No simulated flow represents users, HIL, or a released API |
+| R14-J journey/evidence baseline (this PR) | Human/Automation/Agent goals, steps, positive/negative oracles, authority + 12 platform channels | 3-OS pure Python stdlib manifest linter; JSON + Markdown reports | No simulated flow represents users, HIL, or a released API |
 | R14-B adversarial browser | Keyboard-only modal loop, Escape STOP, focus/reflow, alternate pointer, touch cancellation, high contrast, 200% zoom, error handling | Public Linux Chromium/Firefox/WebKit browser CI, axe, screenshots, triage of failures | Screenreader user study, Safari/iPad hardware, real USB controller, SPL |
 | R14-N native/action parity | Android native touch+STOP and human-priority gate vs CLI/agent capability; typed operation truth | Public 3-OS .NET core source/tests and Android compile, static admission audit | Android emulator/user devices, actual headphone STOP, exposed agent API |
 | R14-H HIL/UX research | One-handed motion, fatigue, thumb reach, real Logitech/Xbox axes, TalkBack/VoiceOver, route disconnect | Separate explicitly authorized on-device local actor; no private recordings | Cannot substitute synthetic CI for actual humans/hardware |
@@ -27,7 +27,7 @@ The current **single C# DSP core is an engine boundary**, not an admitted three-
 
 `not_demonstrated → planned → input_only/test_harness_only → source_compiled → emulated_browser/browser_tested/ci_qualified → real_device_qualified`.
 
-These are **categorical**, not mathematically linear readiness ranks. The JSON manifest deliberately declares **zero** physically qualified journeys until there is real device/locale/accessibility/HRTF provenance. The Python linter enforces negative outcomes, principal authority, no false native-device claims, and complete coverage of 11 product surfaces. It generates `artifacts/evaluation/r14/{machine-scorecard.json,human-scorecard.md}`.
+These are **categorical**, not mathematically linear readiness ranks. The JSON manifest deliberately declares **zero** physically qualified journeys until there is real device/locale/accessibility/HRTF provenance. The Python linter enforces negative outcomes, principal authority, no false native-device claims, and complete coverage of 12 product surfaces. It generates `artifacts/evaluation/r14/{machine-scorecard.json,human-scorecard.md}`.
 
 Don't convert the number of green CI jobs into a release confidence score. An agent and a human may **both read** state but must not **both acquire** the same side-effect authority. STOP/lifecycle cancellation and human preemption dominate agent requests; untrusted automation cannot forge a host-stopped event.
 
@@ -46,3 +46,7 @@ Don't convert the number of green CI jobs into a release confidence score. An ag
 - **Privacy/safety**: no public user recordings/biometrics; explicit human start and separation between manual preview vs randomized trial remain hard gates.
 
 **No new repository, separate orchestration layer, or chat baton.** Keep current GitHub Issue #5 and the R14 evidence report as the machine-readable work queue for all actors.
+
+## Concurrent local-actor visual PWA (distinct release surface)
+
+The local actor has independently opened [R14-P #37](https://github.com/SemperSupra/aural-observatory/pull/37): a separate public visual-only installable-candidate PWA, with `app-info.json` explicitly saying no acoustic output or remote control. This is **not** the R13 loopback desktop audio UI, not a remote phone control plane, not the native Android product, and not yet an owner-approved audio release. The R14 journey manifest now tracks `visual_pwa` separately with H11/A08/G07 journeys. Read-only metadata is an automation/agent-facing fact source, **not** an authenticated agent command API. Parent #37 is owned by the local actor; this review does not mutate its files.
