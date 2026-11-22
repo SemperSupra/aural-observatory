@@ -23,13 +23,19 @@
   const gamepadToggle = byId('spatial-use-gamepad');
   const gamepadPicker = byId('spatial-gamepads');
   const deviceStatus = byId('spatial-gamepad-status');
+  const diagnostics = byId('spatial-gamepad-diagnostics');
+  const invert = {
+    yaw: byId('spatial-invert-yaw'),
+    elevation: byId('spatial-invert-elevation'),
+    distance: byId('spatial-invert-distance')
+  };
   const gpStop = byId('spatial-button-stop');
   const gpMark = byId('spatial-button-mark');
   const gpCenter = byId('spatial-button-center');
   const clamp = (value, low, high) => Math.min(high, Math.max(low, Number.isFinite(value) ? value : 0));
   const position = { azimuth: 0, elevation: 0, distance: 1 };
   let audioContext = null, mediaSource = null, panner = null, outputGain = null;
-  let frameTime = 0, lastGamepadId = '', lastButtons = [];
+  let frameTime = 0, lastGamepadId = '', lastButtons = [], lastDiagnosticTime = 0;
   const activeManual = () => !manual.paused && !manual.ended;
   function eligible() {
     return byId('manual-mode').value === 'ReferenceTone' && byId('manual-ear').value === 'Both';
@@ -228,11 +234,12 @@
       announce('STOP requested locally; actual host/device silence is not measured.');
     }
   });
-  function stick(axis, padData) {
-    const i = Number(axis.value);
+  function stick(name, padData) {
+    const i = Number(axes[name].value);
     const value = Number(padData.axes[i]);
     if (!Number.isFinite(value)) return 0;
-    return Math.abs(value) < .18 ? 0 : clamp(value, -1, 1);
+    const mapped = invert[name].checked ? -value : value;
+    return Math.abs(mapped) < .18 ? 0 : clamp(mapped, -1, 1);
   }
   function buttonEdge(index, gp) {
     const value = gp.buttons[Number(index.value)];
@@ -252,6 +259,7 @@
     else if (list.length === 1) gamepadPicker.value = String(list[0].index);
     lastGamepadId = '';
     lastButtons = [];
+    diagnostics.textContent = list.length ? 'Awaiting controller movement.' : 'No controller samples available.';
     deviceStatus.textContent = list.length
       ? list.length + ' gamepad(s) detected. Enable use, then move a stick or press a button. Nonstandard controllers may need axis/button remapping.'
       : 'No browser-accessible gamepad detected. USB/DirectInput support varies; use the virtual controller or keyboard.';
@@ -277,9 +285,18 @@
             ' buttons. STOP button remains available.';
         }
         // Axis motion changes position only. It CANNOT start audio.
-        const yaw = stick(axes.yaw, gp);
-        const elevate = stick(axes.elevation, gp);
-        const depth = stick(axes.distance, gp);
+        if (time - lastDiagnosticTime > 250) {
+          lastDiagnosticTime = time;
+          const visibleAxes = Array.from(gp.axes).slice(0,8)
+            .map((value,i) => i + ':' + (Number.isFinite(value) ? value.toFixed(2) : '?')).join('  ');
+          const pressed = gp.buttons.flatMap((button,i) =>
+            button && (button.pressed || button.value > .6) ? [String(i)] : []);
+          diagnostics.textContent = 'Raw axes ' + visibleAxes + ' | pressed buttons: ' +
+            (pressed.join(', ') || 'none') + '.';
+        }
+        const yaw = stick('yaw', gp);
+        const elevate = stick('elevation', gp);
+        const depth = stick('distance', gp);
         if (yaw || elevate || depth)
           positionAt(position.azimuth + yaw * 125 * elapsed,
             position.elevation - elevate * 70 * elapsed,
