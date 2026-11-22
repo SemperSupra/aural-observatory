@@ -32,6 +32,8 @@ catch (Exception ex) {
 }
 var search = new QuietSearch(preferences.LastStimulus);
 var audio = Array.Empty<byte>();
+var manualSweepAudio = Array.Empty<byte>();
+var manualSweepId = 0;
 var lastStopped = 0d;
 var currentAudioId = 0;
 var currentInputMode = preferences.ResponseMode;
@@ -114,10 +116,54 @@ app.MapPost("/api/exit", () =>
     app.Lifetime.StopApplication();
     return Results.Ok(new { stopping=true });
 });
+// Manual sweeps are deliberately separate from the randomized quiet-search trial journal.
+// WAV is obtained by token-authenticated fetch, not a credential-bearing media URL.
+app.MapPost("/api/sweep", (SweepInput input) =>
+{
+    lock (gate)
+    {
+        if (search.State is SearchState.Stimulating or SearchState.PostStimulus)
+            return Results.Conflict(new { error = "Stop/finish the current randomized trial before a manual sweep." });
+        if (manualSweepAudio.Length != 0)
+            return Results.Conflict(new { error = "Stop the previous manual sweep first." });
+        if (!Enum.TryParse<AcousticSweepMode>(input.Mode, false, out var mode) || !Enum.IsDefined(mode) ||
+            !Enum.TryParse<SearchEar>(input.Ear, false, out var ear) || !Enum.IsDefined(ear))
+            return Results.BadRequest(new { error = "Unknown manual sweep mode or ear." });
+        try
+        {
+            var sweep = new AcousticSweep(mode, input.StartHz, input.EndHz, input.Seconds, ear);
+            var settings = preferences.LastStimulus with { Sweep = sweep };
+            StimulusValidation.Validate(settings);
+            manualSweepAudio = MakeWave(settings);
+            manualSweepId++;
+            return Results.Ok(new { source = "/api/sweep-audio/" + manualSweepId,
+                durationSeconds = sweep.DurationSeconds, experiment = "unscored-manual-sweep" });
+        }
+        catch (Exception ex) when (ex is ArgumentException or OverflowException)
+        { return Results.BadRequest(new { error = ex.Message }); }
+    }
+});
+app.MapGet("/api/sweep-audio/{id:int}", (int id) =>
+{
+    lock (gate)
+    {
+        if (id != manualSweepId || manualSweepAudio.Length == 0) return Results.NotFound();
+        return Results.File(manualSweepAudio, "audio/wav", enableRangeProcessing: false);
+    }
+});
+app.MapPost("/api/sweep-stop", () =>
+{
+    lock (gate)
+    {
+        manualSweepAudio = Array.Empty<byte>(); manualSweepId++;
+        return Results.Ok(new { stopped = true });
+    }
+});
 app.MapPost("/api/next", (ModeInput input) =>
 {
     lock (gate)
     {
+        if (manualSweepAudio.Length != 0) return Results.Conflict(new { error = "Stop the manual sweep before a randomized trial." });
         if (search.State == SearchState.Stimulating) return Results.Conflict(new { error = "Sound still playing" });
         if (search.State == SearchState.PostStimulus)
         {
@@ -198,7 +244,7 @@ void Store(SearchResult result)
 static string Csv(string value) => "\"" + value.Replace("\"", "\"\"").Replace("\r", " ").Replace("\n", " ") + "\"";
 static byte[] MakeWave(StimulusSettings settings)
 {
-    const int frames = 15 * StimulusValidation.SampleRate;
+    int frames = settings.Sweep?.TotalFrames ?? 15 * StimulusValidation.SampleRate;
     var engine = new StimulusEngine(settings);
     using var memory = new MemoryStream(44 + frames * 4);
     using var writer = new BinaryWriter(memory, Encoding.ASCII, leaveOpen: true);
@@ -221,6 +267,7 @@ static byte[] MakeWave(StimulusSettings settings)
     }
     return memory.ToArray();
 }
+record SweepInput(string Mode, double StartHz, double EndHz, int Seconds, string Ear);
 record PresetInput(string Name);
 record ModeInput(string Mode);
 record HoldInput(bool Down);
