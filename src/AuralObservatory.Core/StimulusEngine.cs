@@ -132,9 +132,9 @@ public sealed class StimulusEngine
             _notch = new NotchBiquad(profile.FrequencyHz, profile.NotchWidthOctaves);
         }
 
-        internal double Sample(AcousticSweep? sweep, double centerHz, long frame, bool selected)
+        internal double Sample(AcousticSweep? sweep, double centerHz, long frame, bool channelSelected)
         {
-            if (!selected) return 0;
+            if (!channelSelected) return 0;
             if (sweep is { Mode: AcousticSweepMode.ReferenceTone })
             {
                 // Phase continuity is independent of frame/block boundaries.
