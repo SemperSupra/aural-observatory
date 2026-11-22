@@ -48,6 +48,7 @@ const cases=[
    await page.goto(address,{waitUntil:'domcontentloaded'});
    await page.waitForFunction(()=>document.getElementById('deck-tab-sound')!==null);
    await page.waitForFunction(()=>document.getElementById('prefs-status').textContent.includes('loaded'),null,{timeout:20000});
+   assert.equal(await page.locator('body > header nav').isHidden(),true,'no duplicate classic navigation when deck is active');
    assert.equal(await page.locator('[role=tab]').count(),4,'four separate workspaces');
    assert.equal(await page.locator('[role=tabpanel]:visible').count(),1,'only one card visible');
    assert.equal(await page.locator('#deck-tab-sound').getAttribute('aria-selected'),'true');
