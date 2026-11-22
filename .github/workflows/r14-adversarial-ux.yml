@@ -2,6 +2,7 @@ name: R14 Adversarial UI journeys — Chromium Firefox WebKit form factors
 on:
   pull_request:
     paths:
+      - 'src/AuralObservatory.SearchDesktop/wwwroot/mobile-controller.js'
       - 'tests/desktop-e2e/r14-adversarial-ux.cjs'
       - '.github/workflows/r14-adversarial-ux.yml'
   workflow_dispatch:
