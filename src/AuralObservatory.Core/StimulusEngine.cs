@@ -17,7 +17,8 @@ public sealed record StimulusSettings(
     EarProfile Right,
     double ModulationHz = 0,
     double ModulationDepth = 0,
-    uint Seed = 0xA17D10u);
+    uint Seed = 0xA17D10u,
+    AcousticSweep? Sweep = null);
 
 public static class StimulusValidation
 {
@@ -29,6 +30,14 @@ public static class StimulusValidation
         ArgumentNullException.ThrowIfNull(settings);
         ValidateEar(settings.Left);
         ValidateEar(settings.Right);
+        settings.Sweep?.Validate();
+        if (settings.Sweep is { Mode: AcousticSweepMode.NotchCenter } notch &&
+            ((notch.Includes(SearchEar.Left) && !settings.Left.NotchEnabled) ||
+             (notch.Includes(SearchEar.Right) && !settings.Right.NotchEnabled)))
+            throw new ArgumentException("A notch-center sweep requires an enabled notch in every selected ear.", nameof(settings));
+        if (settings.Sweep is { Mode: AcousticSweepMode.ReferenceTone } &&
+            settings.ModulationHz != 0)
+            throw new ArgumentException("Reference pitch matching must not add amplitude modulation.", nameof(settings));
         if (!double.IsFinite(settings.ModulationHz) || settings.ModulationHz < 0 || settings.ModulationHz > 20)
             throw new ArgumentOutOfRangeException(nameof(settings.ModulationHz));
         if (!double.IsFinite(settings.ModulationDepth) || settings.ModulationDepth < 0 || settings.ModulationDepth > 0.9)
@@ -74,15 +83,28 @@ public sealed class StimulusEngine
         ArgumentNullException.ThrowIfNull(output);
         if (frames <= 0 || frames > output.Length / 2 || frames > 8192)
             throw new ArgumentOutOfRangeException(nameof(frames));
+        var sweep = _settings.Sweep;
         for (int i = 0; i < frames; i++)
         {
-            // First 100ms ramp to suppress the initial transient.
+            // The renderer cannot extend a sweep past the existing 15-second preview envelope.
+            if (sweep is not null && _sampleCounter >= sweep.TotalFrames)
+            {
+                output[2 * i] = output[2 * i + 1] = 0;
+                _sampleCounter++;
+                continue;
+            }
+            // Preserve existing static-stimulus semantics; only explicitly selected sweeps vary.
+            double hz = sweep is null ? 0 : sweep.FrequencyAtFrame(_sampleCounter);
             double ramp = Math.Min(1.0, _sampleCounter / (0.1 * StimulusValidation.SampleRate));
+            double fadeOut = sweep is null ? 1.0 :
+                Math.Min(1.0, (sweep.TotalFrames - _sampleCounter) / (0.1 * StimulusValidation.SampleRate));
             double mod = _settings.ModulationHz <= 0 ? 1.0 :
                 1.0 - _settings.ModulationDepth * 0.5 *
                 (1.0 - Math.Cos(2.0 * Math.PI * _settings.ModulationHz * _sampleCounter / StimulusValidation.SampleRate));
-            output[2 * i] = ConvertSample(_left.Sample() * ramp * mod);
-            output[2 * i + 1] = ConvertSample(_right.Sample() * ramp * mod);
+            output[2 * i] = ConvertSample(_left.Sample(sweep, hz, _sampleCounter,
+                sweep is null || sweep.Includes(SearchEar.Left)) * ramp * fadeOut * mod);
+            output[2 * i + 1] = ConvertSample(_right.Sample(sweep, hz, _sampleCounter,
+                sweep is null || sweep.Includes(SearchEar.Right)) * ramp * fadeOut * mod);
             _sampleCounter++;
         }
     }
@@ -101,6 +123,7 @@ public sealed class StimulusEngine
         private double _brown;
         private double _p0, _p1, _p2, _p3, _p4, _p5, _p6;
         private double _lastWhite, _olderWhite, _lastPink;
+        private double _tonePhase;
 
         internal EarChannel(EarProfile profile, uint seed)
         {
@@ -109,8 +132,18 @@ public sealed class StimulusEngine
             _notch = new NotchBiquad(profile.FrequencyHz, profile.NotchWidthOctaves);
         }
 
-        internal double Sample()
+        internal double Sample(AcousticSweep? sweep, double centerHz, long frame, bool selected)
         {
+            if (!selected) return 0;
+            if (sweep is { Mode: AcousticSweepMode.ReferenceTone })
+            {
+                // Phase continuity is independent of frame/block boundaries.
+                _tonePhase += 2.0 * Math.PI * centerHz / StimulusValidation.SampleRate;
+                if (_tonePhase >= 2.0 * Math.PI) _tonePhase -= 2.0 * Math.PI;
+                return Math.Sin(_tonePhase) * _profile.Gain;
+            }
+            if (sweep is { Mode: AcousticSweepMode.NotchCenter } && frame % 48 == 0)
+                _notch.SetCenter(centerHz); // 1 ms coefficient update; filter memory is preserved.
             _rng ^= _rng << 13;
             _rng ^= _rng >> 17;
             _rng ^= _rng << 5;
@@ -161,13 +194,20 @@ public sealed class StimulusEngine
 
     private sealed class NotchBiquad
     {
-        private readonly double _b0, _b1, _b2, _a1, _a2;
+        private double _b0, _b1, _b2, _a1, _a2;
         private double _z1, _z2;
+        private readonly double _widthOctaves;
 
         internal NotchBiquad(double centerHz, double widthOctaves)
         {
+            _widthOctaves = widthOctaves;
+            SetCenter(centerHz);
+        }
+
+        internal void SetCenter(double centerHz)
+        {
             double w0 = 2.0 * Math.PI * centerHz / StimulusValidation.SampleRate;
-            double q = Math.Sqrt(Math.Pow(2.0, widthOctaves)) / (Math.Pow(2.0, widthOctaves) - 1.0);
+            double q = Math.Sqrt(Math.Pow(2.0, _widthOctaves)) / (Math.Pow(2.0, _widthOctaves) - 1.0);
             double alpha = Math.Sin(w0) / (2.0 * q);
             double a0 = 1 + alpha;
             _b0 = 1 / a0;
