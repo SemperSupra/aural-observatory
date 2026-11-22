@@ -1,0 +1,9 @@
+# R14-B — Adversarial human UX acceptance against the real desktop C# host
+
+This is **not another happy-path controller test**. It is an independent source-only adversarial child of R13-Q #31. It owns only `tests/desktop-e2e/r14-adversarial-ux.cjs` and a separate workflow. It does **not** change R12/R13 source, any microphone/speaker driver, or the local actor's Q2/Q3 review.
+
+Dedicated public GitHub Actions launches the actual local-loopback C# host and tests **Chromium, Firefox and WebKit** independently across six form factors each: 1280x800 desktop, 640x360 "200% zoom-equivalent available viewport" (not browser engine page zoom), 390x844 portrait phone, 320x568 small phone, 844x390 landscape phone, 1024x768 tablet. For every case the script asserts unauthorized forged token requests return 403; no automatic sound; overlay modal visible with inert background; 40px practical button-size threshold; no critical clipping/overflow; arrow-key alternative to joystick drag; 24 Tab/Shift+Tab focus-containment steps; Escape restores launch focus; no unprepared Y/Play; randomized trial stays paused; serious/critical axe diagnostics absent. Evidence JSON and screenshots are retained. **An actual red test is not automatically accepted or hidden.**
+
+This expands functional and accessibility evidence but is *not* an iPhone/iPad physical test, real 200% browser zoom, NVDA/TalkBack/VoiceOver signoff, Fitts' law study, 3D sound localization perception or acoustically verified STOP. WCAG 2.2 AA checks are automated subsets, not a conformance certificate. The UI is English-only in this source: German/Thai translation and legibility are open requirements, not silently claimed.
+
+If a severe failure emerges, open a separate targeted **fix** branch with its own owned paths, preserve the negative CI receipt, and rerun this exact adversarial suite. No direct `main` updates, private data, real audio device or release authorization.
