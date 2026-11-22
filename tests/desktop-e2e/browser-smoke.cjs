@@ -89,6 +89,7 @@ async function run(){
  const sweepSrc=await page.locator('#manual-sound').getAttribute('src');
  assert.ok(sweepSrc.startsWith('blob:'),'Manual sweep served as a token-authenticated local Blob URL');
  assert.ok(!sweepSrc.includes('token='),'Manual media URL contains no query credential');
+ assert.equal(await page.locator('#manual-mark').isDisabled(),false,'Subjective frequency-mark control becomes available when prepared');
  assert.equal(await page.locator('#sound').getAttribute('src'),null,'Randomized quiet-search player remains untouched');
  await page.locator('#manual-stop').click();
  await page.waitForFunction(()=>document.querySelector('#manual-sweep-status').textContent.includes('stopped'),null,{timeout:10000});
