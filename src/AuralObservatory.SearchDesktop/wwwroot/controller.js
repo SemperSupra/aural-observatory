@@ -18,6 +18,8 @@
     distance: byId('spatial-distance')};
   const pad = byId('spatial-pad');
   const dot = byId('spatial-emitter');
+  const secondaryPad = byId('spatial-secondary-pad');
+  const secondaryDot = byId('spatial-secondary-emitter');
   const gamepadToggle = byId('spatial-use-gamepad');
   const gamepadPicker = byId('spatial-gamepads');
   const deviceStatus = byId('spatial-gamepad-status');
@@ -51,6 +53,9 @@
     // A top-view map shows angle around the head; center is the listening head.
     dot.style.left = (50 + Math.sin(normalizedAzimuth) * (12 + 35 * normalizedRadius)) + '%';
     dot.style.top = (50 - Math.cos(normalizedAzimuth) * (12 + 35 * normalizedRadius)) + '%';
+    // Second on-screen stick is a direct, bounded height/distance control.
+    secondaryDot.style.left = (20 + 60 * ((position.distance - 1) / 2)) + '%';
+    secondaryDot.style.top = (50 - 30 * (position.elevation / 45)) + '%';
     if (panner && enable.checked && eligible() && audioContext) {
       const now = audioContext.currentTime;
       panner.positionX.setTargetAtTime(x, now, .025);
@@ -163,13 +168,60 @@
     e.preventDefault();
     positionAt(position.azimuth + yaw, position.elevation + height, position.distance);
   });
+  function moveSecondary(e) {
+    const r = secondaryPad.getBoundingClientRect();
+    const across = clamp((e.clientX - r.left) / r.width, 0, 1);
+    const upwards = clamp((e.clientY - r.top) / r.height, 0, 1);
+    positionAt(position.azimuth, (0.5 - upwards) * 90, 1 + 2 * across);
+  }
+  let secondaryPointer = null;
+  secondaryPad.addEventListener('pointerdown', e => {
+    secondaryPointer = e.pointerId;
+    secondaryPad.setPointerCapture(e.pointerId);
+    moveSecondary(e);
+  });
+  secondaryPad.addEventListener('pointermove', e => {
+    if (e.pointerId === secondaryPointer) moveSecondary(e);
+  });
+  for (const eventName of ['pointerup','pointercancel']) {
+    secondaryPad.addEventListener(eventName, e => {
+      if (e.pointerId === secondaryPointer) secondaryPointer = null;
+    });
+  }
+  secondaryPad.addEventListener('keydown', e => {
+    let height=0, distance=0;
+    if (e.key === 'ArrowLeft') distance=-0.1;
+    else if (e.key === 'ArrowRight') distance=0.1;
+    else if (e.key === 'ArrowUp') height=5;
+    else if (e.key === 'ArrowDown') height=-5;
+    else if (e.key === 'Home') {
+      positionAt(position.azimuth,0,1);
+      e.preventDefault();
+      return;
+    } else return;
+    e.preventDefault();
+    positionAt(position.azimuth,position.elevation+height,position.distance+distance);
+  });
   byId('spatial-center').addEventListener('click', () => positionAt(0, 0, 1));
+  byId('spatial-virtual-center').addEventListener('click', () => positionAt(0, 0, 1));
+  byId('spatial-virtual-mark').addEventListener('click', () => {
+    if (activeManual()) byId('manual-mark').click();
+    else announce('A / Mark is available only while a manual tone is playing.');
+  });
+  byId('spatial-virtual-play').addEventListener('click', () => {
+    if (!byId('manual-resume').disabled) byId('manual-resume').click();
+    else announce('Prepare a manual reference tone first, then click Y / Play prepared.');
+  });
   // Escape is an emergency *UI* stop. It cancels the manual element and
   // requests the existing host cleanup; does not claim physical silence.
   function stopPlayback() {
     const manualPending = byId('manual-start').disabled || !!manual.getAttribute('src');
     (manualPending ? byId('manual-stop') : byId('stop')).click();
   }
+  byId('spatial-virtual-stop').addEventListener('click', () => {
+    stopPlayback();
+    announce('Virtual B / STOP requested. Actual host/device silence is not measured.');
+  });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && !e.repeat) {
       stopPlayback();
