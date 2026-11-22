@@ -140,7 +140,7 @@ manualStart.addEventListener('click',async()=>{
   catch(e){manualStatus.textContent='Audio prepared; select Play prepared sweep to authorize playback.';}
  }catch(e){
   releaseManualMedia();
-  void api('sweep-stop').catch(()=>{});
+  await api('sweep-stop').catch(()=>{});
   manualStatus.textContent='Sweep rejected: '+e.message;
  }
 });
