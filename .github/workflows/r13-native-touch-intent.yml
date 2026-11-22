@@ -1,0 +1,27 @@
+name: R13 native-portable Android touch input semantic qualification
+on:
+  pull_request:
+    paths:
+      - 'src/AuralObservatory.Core/SpatialTouchIntentProjector.cs'
+      - 'tests/AuralObservatory.SpatialTouch.Tests/**'
+      - '.github/workflows/r13-native-touch-intent.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-input-oracle:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-26]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
+        with:
+          dotnet-version: '10.0.x'
+      - name: Pure multi-pointer projection and fail-closed input tests
+        run: dotnet run --configuration Release --project tests/AuralObservatory.SpatialTouch.Tests/AuralObservatory.SpatialTouch.Tests.csproj
