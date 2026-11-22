@@ -239,7 +239,16 @@ public sealed class MainActivity : Activity
         var center = new Button(this) { Text = "CENTER TOUCH POSITION" };
         center.Click += (_, _) => surface.Center();
         panel.AddView(center);
-        dialog.SetCancelable(false); // Explicit Close+STOP or lifecycle cancellation.
+        // Android Back, gesture navigation, and explicit Close all converge on
+        // the same STOP + pointer cancellation. No trapped noncancelable modal.
+        dialog.DismissEvent += (_, _) =>
+        {
+            StopPreview();
+            surface.CancelInput();
+            _nativeSpatialTouch = null;
+            _nativeSpatialDialog = null;
+        };
+        dialog.SetCancelable(true);
         dialog.SetContentView(panel);
         _nativeSpatialDialog = dialog;
         dialog.Show();
