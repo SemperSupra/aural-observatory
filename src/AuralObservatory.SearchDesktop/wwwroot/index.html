@@ -16,7 +16,7 @@ fieldset{min-width:0;border:1px solid var(--border);border-radius:.6rem;padding:
 </style><link rel="stylesheet" href="/controller.css"></head>
 <body><a href="#content" class="skip">Skip to the research controls</a>
 <header><h1>Aural Observatory · Quiet Search</h1>
-<nav aria-label="Sections"><a href="#configuration">Configure</a><a href="#experiment">Explore</a><a href="#feedback">Feedback</a><a href="#appearance">Appearance and presets</a></nav></header>
+<nav aria-label="Sections"><a href="#configuration">Configure</a><a href="#spatial-controller">Spatial controller</a><a href="#experiment">Explore</a><a href="#feedback">Feedback</a><a href="#appearance">Appearance and presets</a></nav></header>
 <main id="content" tabindex="-1">
 <p>Research tool, not medical treatment. Begin at a low device volume. Generated PCM level is not headphone SPL. This search <strong>never raises gain</strong>.</p>
 <section id="configuration" aria-labelledby="configure-title">
@@ -78,13 +78,26 @@ fieldset{min-width:0;border:1px solid var(--border);border-radius:.6rem;padding:
 <div class="spatial-map-row"><button type="button" id="spatial-center">Center sound in front</button></div>
 </div>
 <div>
+<p id="spatial-secondary-label">Height and distance (second stick)</p>
+<div id="spatial-secondary-pad" role="group" tabindex="0" aria-label="Virtual right stick. Drag to change height and distance, or use arrow keys; Home resets height and distance.">
+<span class="spatial-compass n">Up</span><span class="spatial-compass s">Down</span>
+<span class="spatial-compass e">Far</span><span class="spatial-compass w">Near</span>
+<span id="spatial-secondary-emitter" aria-hidden="true"></span>
+</div>
+<div class="spatial-face-buttons" role="group" aria-label="Virtual controller action buttons">
+<button type="button" id="spatial-virtual-mark">A · Mark</button>
+<button type="button" id="spatial-virtual-stop">B · STOP</button>
+<button type="button" id="spatial-virtual-center">X · Center</button>
+<button type="button" id="spatial-virtual-play">Y · Play prepared</button>
+</div>
+<p class="spatial-small">Only Y / Play prepared can play audio, after you have already prepared a manual tone. Stick motion never starts playback.</p>
 <label for="spatial-azimuth">Azimuth: <output id="spatial-value-azimuth" for="spatial-azimuth">0°</output></label>
 <input id="spatial-azimuth" type="range" min="-180" max="180" step="1" value="0">
 <label for="spatial-elevation">Elevation: <output id="spatial-value-elevation" for="spatial-elevation">0°</output></label>
 <input id="spatial-elevation" type="range" min="-45" max="45" step="1" value="0">
 <label for="spatial-distance">Relative distance: <output id="spatial-value-distance" for="spatial-distance">1.0×</output></label>
 <input id="spatial-distance" type="range" min="1" max="3" step="0.1" value="1">
-<p class="spatial-small">The circular pad and sliders work with touch, mouse, or keyboard. These coordinates control an HRTF renderer; perceived direction depends on headphones and individual hearing. Ear-specific noise/notch sweeps are excluded to preserve left/right experimental isolation.</p>
+<p class="spatial-small">The twin sticks and sliders work with touch, mouse, or keyboard. These coordinates control an HRTF renderer; perceived direction depends on headphones and individual hearing. Ear-specific noise/notch sweeps are excluded to preserve left/right experimental isolation.</p>
 <p><strong>Stop:</strong> use the manual STOP button above, the controller STOP mapping, or Escape. STOP requests are local and do not establish measured acoustic silence.</p>
 </div>
 </div>
