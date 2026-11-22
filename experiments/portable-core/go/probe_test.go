@@ -50,7 +50,7 @@ func TestInvalidStopEarAndBlockInvariance(t *testing.T){
  a,_:=NewTone(s); b,_:=NewTone(s)
  whole:=make([]int16,2048);split:=make([]int16,2048)
  if err:=a.Render(whole);err!=nil{t.Fatal(err)}
- for off:=0;off<len(split);off+=254{if err:=b.Render(split[off:off+254]);err!=nil{t.Fatal(err)}}
+ for off:=0;off<len(split);off+=256{if err:=b.Render(split[off:off+256]);err!=nil{t.Fatal(err)}}
  nonzero:=false
  for i,v:=range whole{
   if v!=split[i]{t.Fatalf("chunk dependence at %d",i)}
