@@ -125,8 +125,18 @@ const ids=['sound','spatial','search','settings'];
       return {label:el.textContent,left:r.left,right:r.right,width:r.width,height:r.height};
      });
      const stop=document.querySelector('#deck-stop').getBoundingClientRect();
+     const offenders=[...document.querySelectorAll('body *')].filter(e=>{
+      const r=e.getBoundingClientRect(),cs=getComputedStyle(e);
+      return r.width>0&&r.right>viewport+2&&cs.display!=='none'&&cs.visibility!=='hidden';
+     }).slice(0,25).map(e=>{
+       const r=e.getBoundingClientRect();
+       return {tag:e.tagName,id:e.id,cls:typeof e.className==='string'?e.className.slice(0,60):'',
+         right:Math.round(r.right),left:Math.round(r.left),width:Math.round(r.width),
+         scrollWidth:e.scrollWidth,clientWidth:e.clientWidth};
+     });
      return {overflow:document.documentElement.scrollWidth-viewport,
-       viewport,tabCount:t.length,tabs:t,stopSize:{width:stop.width,height:stop.height}};
+       viewport,tabCount:t.length,tabs:t,stopSize:{width:stop.width,height:stop.height},
+       offenders};
     });
     assert.ok(zoom.overflow<=2,'200% text horizontal overflow '+JSON.stringify(zoom));
     assert.ok(zoom.tabs.every(t=>t.width>=44&&t.height>=44),'tab target under 44px');
