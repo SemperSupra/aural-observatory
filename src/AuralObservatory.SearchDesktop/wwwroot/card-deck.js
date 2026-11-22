@@ -103,7 +103,7 @@
         if (!['ArrowRight','ArrowLeft','Home','End'].includes(event.key)) return;
         event.preventDefault();
         const next=event.key==='Home'?0:event.key==='End'?cards.length-1:
-          event.key==='ArrowRight'?Math.min(cards.length-1,current+1):Math.max(0,current-1);
+          event.key==='ArrowRight'?(current+1)%cards.length:(current+cards.length-1)%cards.length;
         select(next,true);
       });
     });
