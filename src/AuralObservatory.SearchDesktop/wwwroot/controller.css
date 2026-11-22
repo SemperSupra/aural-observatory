@@ -1,0 +1,19 @@
+/* R12 spatial controller; scoped to optional non-scored manual preview. */
+#spatial-controller .spatial-layout{display:grid;grid-template-columns:minmax(0,250px) minmax(0,1fr);gap:1.2rem;align-items:start}
+#spatial-pad{position:relative;width:100%;max-width:250px;aspect-ratio:1;border:2px solid var(--border);border-radius:50%;background:radial-gradient(circle at center,var(--panel) 0 16%,transparent 17%),repeating-radial-gradient(circle at center,transparent 0 20px,var(--border) 21px 22px,transparent 23px 45px);touch-action:none;user-select:none;cursor:crosshair;outline-offset:4px}
+#spatial-pad:focus-visible{outline:3px solid var(--focus)}
+.spatial-compass{position:absolute;font-size:.78rem;font-weight:700;color:var(--fg);pointer-events:none}
+.spatial-compass.n{top:2%;left:50%;transform:translateX(-50%)}.spatial-compass.s{bottom:2%;left:50%;transform:translateX(-50%)}
+.spatial-compass.e{right:2%;top:50%;transform:translateY(-50%)}.spatial-compass.w{left:2%;top:50%;transform:translateY(-50%)}
+.spatial-head{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:var(--panel);border:2px solid var(--fg);width:29%;height:29%;display:grid;place-items:center;pointer-events:none;font-size:.8rem;font-weight:bold}
+#spatial-emitter{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);background:var(--focus);border:2px solid var(--fg);width:24px;height:24px;border-radius:50%;pointer-events:none;box-shadow:0 0 0 4px var(--panel)}
+#spatial-controller input[type=range]{width:100%;max-width:400px;accent-color:var(--accent)}
+#spatial-controller output{font-variant-numeric:tabular-nums;font-weight:600}
+.spatial-map-row{display:flex;gap:.6rem;align-items:center;justify-content:center}
+#spatial-controller .spatial-small{font-size:.86rem;color:var(--muted)}
+#spatial-controller #spatial-gamepad-status,#spatial-controller #spatial-status{white-space:normal}
+#spatial-controller .spatial-controller-mappings{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:.4rem .85rem}
+#spatial-controller .spatial-controller-mappings label{margin:.2rem 0}
+#spatial-controller select{width:100%}
+#spatial-controller #spatial-pad-label{font-weight:600}
+@media(max-width:570px){#spatial-controller .spatial-layout{grid-template-columns:1fr}#spatial-pad{margin:0 auto}}
