@@ -57,6 +57,7 @@ fieldset{min-width:0;border:1px solid var(--border);border-radius:.6rem;padding:
 </div>
 <button id="manual-start">Prepare and play one sweep</button>
 <button id="manual-resume" disabled>Play prepared sweep</button>
+<button id="manual-mark" disabled>Mark subjective frequency and stop</button>
 <button id="manual-stop">Stop manual sweep</button>
 <p id="manual-sweep-status" role="status" aria-live="polite">No sweep playing. Starting is always explicit. Manual sweeps are excluded from randomized quiet-search scores.</p>
 <audio id="manual-sound" preload="none"></audio>
@@ -103,13 +104,15 @@ let down=false, quiet=false, armed=false, active=false, post=false;
 const manualSound=document.querySelector('#manual-sound');
 const manualStart=document.querySelector('#manual-start');
 const manualResume=document.querySelector('#manual-resume');
+const manualMark=document.querySelector('#manual-mark');
 const manualStatus=document.querySelector('#manual-sweep-status');
-let manualGeneration=0,manualBlobUrl=null,manualPending=false,manualPlaying=false;
+let manualGeneration=0,manualBlobUrl=null,manualPending=false,manualPlaying=false,manualSettings=null;
 function releaseManualMedia(){
  manualGeneration++;
  manualSound.pause();manualSound.removeAttribute('src');manualSound.load();
  if(manualBlobUrl){URL.revokeObjectURL(manualBlobUrl);manualBlobUrl=null;}
  manualPending=false;manualPlaying=false;manualStart.disabled=false;manualResume.disabled=true;
+ manualMark.disabled=true;manualSettings=null;
 }
 async function stopManual(){
  releaseManualMedia();
@@ -133,8 +136,9 @@ manualStart.addEventListener('click',async()=>{
   const blob=await response.blob();
   if(generation!==manualGeneration){await api('sweep-stop');return;}
   manualBlobUrl=URL.createObjectURL(blob);
+  manualSettings=request;
   manualSound.src=manualBlobUrl;
-  manualPending=false;manualPlaying=true;manualResume.disabled=false;
+  manualPending=false;manualPlaying=true;manualResume.disabled=false;manualMark.disabled=false;
   manualStatus.textContent='Prepared '+receipt.durationSeconds+'-second manual sweep; playback requires a user gesture.';
   try{await manualSound.play();manualStatus.textContent='Manual sweep playing. STOP remains available.';}
   catch(e){manualStatus.textContent='Audio prepared; select Play prepared sweep to authorize playback.';}
@@ -145,6 +149,17 @@ manualStart.addEventListener('click',async()=>{
  }
 });
 manualResume.addEventListener('click',async()=>{try{await manualSound.play();manualStatus.textContent='Manual sweep playing. STOP remains available.';}catch(e){manualStatus.textContent='Could not play: '+e.message;}});
+manualMark.addEventListener('click',async()=>{
+ if(!manualSettings || manualSound.paused || !Number.isFinite(manualSound.currentTime)){
+  manualStatus.textContent='Play the sweep before marking a subjective frequency.';return;
+ }
+ const progress=Math.min(1,Math.max(0,manualSound.currentTime/manualSettings.seconds));
+ const hz=manualSettings.startHz*Math.exp(Math.log(manualSettings.endHz/manualSettings.startHz)*progress);
+ await stopManual();
+ manualStatus.textContent='Subjective mark near '+Math.round(hz)+' Hz (half: '+
+  Math.round(Math.max(200,hz/2))+' Hz; double: '+Math.round(Math.min(10000,hz*2))+
+  ' Hz). Timing is approximate and is not an audiogram, diagnosis or treatment result.';
+});
 document.querySelector('#manual-stop').addEventListener('click',()=>{void stopManual();});
 manualSound.addEventListener('ended',()=>{void stopManual();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&(manualPlaying||manualPending))void stopManual();});
