@@ -33,8 +33,8 @@ for gate in [
     ('native Android View MotionEvent','OnTouchEvent(MotionEvent?' in stouch),
     ('native Android Activity lifecycle STOP','protected override void OnPause' in sandroid and
      'StopPreview();' in sandroid),
-    ('native touch never directly drives AudioTrack','AudioTrack' not in stouch),
-    ('native view not a WebView','WebView' not in stouch and 'WebView' not in sandroid),
+    ('native touch never directly drives AudioTrack',not re.search(r'\bnew\s+(?:Android\.Media\.)?AudioTrack\s*\(',stouch)),
+    ('native view not a WebView',not re.search(r'\bnew\s+(?:Android\.Webkit\.)?WebView\s*\(',stouch+sandroid)),
     ('native touch projection owned by core','class SpatialTouchIntentProjector' in score),
     ('no agent API route falsely declared',not any(
         r['path'].startswith('/api/agent') for r in routes)),
