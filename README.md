@@ -64,3 +64,12 @@ The sensor modules target Garmin HRM-Pro Plus or any compliant standard BLE ches
 The Quiet Search now offers hold-when-quiet, hold-while-audible/release-when-quiet (explicitly armed, no default quiet), and tap-to-toggle. Input modes apply to mouse/keyboard/touch or native Android controls, and the R7 journal includes the selected mode in a new file. No change to gain or claim of tinnitus detection.
 
 Public `.github/workflows/package-candidates.yml` requests standard free hosted runners for native Android debug APK, portable Linux/macOS/Windows desktop bundles and an unsigned user-scoped Windows NSIS installer candidate. These are qualification artifacts only, not signed production installers or F-Droid/Play/WinGet releases. Release admission remains with Android Publishing Foundry and Windows Package Foundry and requires explicit owner review; see `docs/QUIET-MODES-AND-PACKAGING-R7.md`.
+
+## R9 desktop and experimental tooling
+The portable .NET 10 C# DSP core is shared by Android native AudioTrack and Windows/macOS/Linux desktop local-browser UI; there are no separate platform DSP forks.
+
+Desktop: `dotnet run --project src/AuralObservatory.SearchDesktop` starts a **loopback-only ephemeral-port** server and opens your default browser when a GUI session exists. Use `--no-browser` or `AURAL_NO_BROWSER=1` for test/headless execution; an exclusive per-user data-directory lock prevents multiple concurrent sessions. The in-page **Exit application** button stops the server.
+
+The desktop interface edits independent ear frequencies, notches, noise distributions, gain fractions, and temporal modulation. Save versioned settings to OS user data, create named presets, and restart search to use edited settings. Data/observation journals are retained on upgrades. On Android use user-chosen JSON export/import before uninstall or signing-key changes.
+
+Development gates run on public standard GitHub-hosted Windows 2025, Ubuntu 24.04 and macOS 26 runners. The Chromium+axe suite is synthetic browser automated UX evidence, not manual screen-reader or calibrated acoustic qualification. See `docs/R9-INTEGRATION.md` and `docs/UI-UX-DX-R8-AUDIT.md`.

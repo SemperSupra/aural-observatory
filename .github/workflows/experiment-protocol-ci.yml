@@ -1,0 +1,31 @@
+name: R8 experimental protocol source qualification
+on:
+  pull_request:
+    paths:
+      - 'src/AuralObservatory.Core/ExperimentProtocol.cs'
+      - 'tests/AuralObservatory.Experiment.Tests/**'
+      - 'schemas/experiment-protocol-v1.schema.json'
+      - 'examples/synthetic-r8-n1-protocol.json'
+      - '.github/workflows/experiment-protocol-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        runner: [ubuntu-24.04, windows-2025, macos-26]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet run --project tests/AuralObservatory.Experiment.Tests/AuralObservatory.Experiment.Tests.csproj --configuration Release
+      - name: Validate JSON schema and example parse
+        shell: bash
+        run: |
+          node -e "const fs=require('fs');for(const p of ['schemas/experiment-protocol-v1.schema.json','examples/synthetic-r8-n1-protocol.json']){const x=JSON.parse(fs.readFileSync(p));console.log('PASS JSON syntax '+p);}"

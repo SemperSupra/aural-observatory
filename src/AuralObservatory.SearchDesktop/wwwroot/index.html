@@ -1,19 +1,82 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Aural Observatory Quiet Search</title>
-<style>body{font:16px system-ui,sans-serif;max-width:700px;margin:20px auto;padding:0 15px;line-height:1.5;background:#f4f6f9;color:#151a27}h1{font-size:1.6rem}section{border:1px solid #c6ccd6;background:white;border-radius:12px;padding:20px;margin:14px 0}button,input,textarea{font:inherit;padding:10px;border-radius:9px}button{background:#263e65;color:white;border:0;cursor:pointer;margin:4px 0}button:disabled{opacity:.5}#quiet{display:block;width:100%;height:110px;touch-action:none;user-select:none;background:#344f74;font-size:1.2rem;font-weight:700}#quiet.down{background:#15583f}small{color:#485365}textarea{width:95%;min-height:65px}#status{white-space:pre-line}</style></head>
-<body><h1>Aural Observatory · Quiet Search</h1>
+<style>
+:root{--bg:#f6f8fb;--panel:#fff;--fg:#17202e;--muted:#42526a;--border:#aebace;--accent:#213e64;--accentText:#fff;--focus:#d16b00;--font:system-ui,sans-serif;color-scheme:light}
+:root[data-theme=dark]{--bg:#121820;--panel:#222d3a;--fg:#f2f6fc;--muted:#d4deea;--border:#7d92aa;--accent:#a4caef;--accentText:#111c2b;--focus:#ffe28b;color-scheme:dark}
+:root[data-contrast=high]{--border:currentColor;--focus:#ffab00}
+*{box-sizing:border-box}html{font-family:var(--font)}body{font-size:1rem;line-height:1.55;max-width:780px;margin:0 auto;padding:1rem 1rem 3rem;background:var(--bg);color:var(--fg)}header{padding:0.5rem 0 1rem}nav{display:flex;flex-wrap:wrap;gap:.6rem}nav a{border:1px solid var(--border);border-radius:.6rem;padding:.55rem .8rem}
+h1{font-size:1.7rem;line-height:1.25}h2{font-size:1.2rem}section{border:1px solid var(--border);background:var(--panel);border-radius:.8rem;padding:1rem;margin:1rem 0}button,input,select,textarea{font:inherit;max-width:100%;border-radius:.5rem}input,select,textarea{background:var(--panel);color:var(--fg);border:1px solid var(--border);padding:.5rem}
+label{display:block;margin:.6rem 0}button{background:var(--accent);color:var(--accentText);border:1px solid var(--border);cursor:pointer;margin:.4rem 0;padding:.75rem 1rem;min-height:48px}button:disabled{opacity:.55}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+#quiet{display:block;width:100%;min-height:115px;touch-action:none;user-select:none;font-size:1.15rem;font-weight:700}#quiet.down{outline:4px solid var(--focus);outline-offset:-5px}
+small,.muted{color:var(--muted)}textarea{width:100%;min-height:85px}#status{white-space:pre-line}#font-size{width:100%;max-width:360px}.skip{position:absolute;left:-9999px;top:0}.skip:focus{left:10px;background:var(--panel);z-index:3;padding:.7rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:1rem}.grid>*{min-width:0}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+fieldset{min-width:0;border:1px solid var(--border);border-radius:.6rem;padding:.85rem}legend{font-weight:600;padding:0 .4rem}fieldset input[type=number],fieldset select{width:100%}#configuration .grid{align-items:start}
+</style></head>
+<body><a href="#content" class="skip">Skip to the research controls</a>
+<header><h1>Aural Observatory · Quiet Search</h1>
+<nav aria-label="Sections"><a href="#configuration">Configure</a><a href="#experiment">Explore</a><a href="#feedback">Feedback</a><a href="#appearance">Appearance and presets</a></nav></header>
+<main id="content" tabindex="-1">
 <p>Research tool, not medical treatment. Begin at a low device volume. Generated PCM level is not headphone SPL. This search <strong>never raises gain</strong>.</p>
-<section><h2>Fixed-level frequency trials</h2><p id="status">Ready. Each trial plays for 15 seconds. Press and hold during perceived quiet; continue holding after playback if tinnitus remains reduced.</p>
-<button id="next">Start / next trial</button> <button id="stop">Stop</button>
+<section id="configuration" aria-labelledby="configure-title">
+<h2 id="configure-title">Configure sound for each ear</h2>
+<p>Profiles change only future trials; the active trial is frozen. These numeric values are relative digital settings, <strong>not measured sound pressure</strong>.</p>
+<div class="grid">
+<fieldset><legend>Left ear</legend>
+<label for="left-hz">Notch center (Hz)</label><input type="number" inputmode="decimal" id="left-hz" min="200" max="10000" step="any" value="4000">
+<label for="left-gain">Gain fraction (0–1)</label><input type="number" inputmode="decimal" id="left-gain" min="0" max="1" step="0.01" value="0.6">
+<label for="left-width">Notch width (octaves)</label><input type="number" inputmode="decimal" id="left-width" min="0.1" max="2" step="0.1" value="1">
+<label for="left-colour">Noise spectrum</label><select id="left-colour"><option value="0">White</option><option value="1">Pink</option><option value="2">Brown</option><option value="3">Blue (legacy)</option><option value="4">Violet (legacy)</option><option value="5">Blue (corrected PSD)</option><option value="6">Violet (corrected PSD)</option></select>
+<label><input id="left-notch" type="checkbox" checked> Apply notch on left</label>
+</fieldset>
+<fieldset><legend>Right ear</legend>
+<label for="right-hz">Notch center (Hz)</label><input type="number" inputmode="decimal" id="right-hz" min="200" max="10000" step="any" value="6000">
+<label for="right-gain">Gain fraction (0–1)</label><input type="number" inputmode="decimal" id="right-gain" min="0" max="1" step="0.01" value="0.6">
+<label for="right-width">Notch width (octaves)</label><input type="number" inputmode="decimal" id="right-width" min="0.1" max="2" step="0.1" value="1">
+<label for="right-colour">Noise spectrum</label><select id="right-colour"><option value="0">White</option><option value="1">Pink</option><option value="2">Brown</option><option value="3">Blue (legacy)</option><option value="4">Violet (legacy)</option><option value="5">Blue (corrected PSD)</option><option value="6">Violet (corrected PSD)</option></select>
+<label><input id="right-notch" type="checkbox" checked> Apply notch on right</label>
+</fieldset>
+</div>
+<div class="grid">
+<label>Amplitude modulation (Hz, 0–20) <input id="modulation-hz" type="number" inputmode="decimal" min="0" max="20" step="0.1" value="0"></label>
+<label>Modulation depth (0–0.9) <input id="modulation-depth" type="number" inputmode="decimal" min="0" max="0.9" step="0.05" value="0"></label>
+</div>
+<button id="save-audio">Save sound profile for next trial</button>
+<p id="audio-config-status" role="status" aria-live="polite">No sound configuration changes saved in this session.</p>
+</section>
+<section id="experiment" aria-labelledby="experiment-title"><h2 id="experiment-title">1. Explore fixed-level sound trials</h2><p id="status" role="status" aria-live="polite">Ready. Each trial plays for 15 seconds. Press and hold during perceived quiet; continue holding after playback if tinnitus remains reduced.</p>
+<button id="next">Start / next trial</button> <button id="stop">Stop</button> <button id="reset-search">New search (retain observations)</button> <button id="exit-app">Exit application</button>
 <audio id="sound" preload="auto"></audio>
 </section>
-<section><label>Response style: <select id="mode"><option value="HoldWhenQuiet">Hold while quiet</option><option value="ReleaseWhenQuiet">Hold while tinnitus is audible; RELEASE when quiet</option><option value="ToggleQuiet">Tap once to start quiet, again to end</option></select></label>
+<section aria-labelledby="response-title"><h2 id="response-title">2. Mark perceived quiet</h2><label>Response style: <select id="mode"><option value="HoldWhenQuiet">Hold while quiet</option><option value="ReleaseWhenQuiet">Hold while tinnitus is audible; RELEASE when quiet</option><option value="ToggleQuiet">Tap once to start quiet, again to end</option></select></label>
 <button id="quiet" aria-label="Record perceived tinnitus quiet with selected response style">PRESS AND HOLD WHEN QUIET</button>
 <p>Quiet while sound plays indicates possible masking; quiet after it ends is a separate residual-inhibition observation. Neither objectively detects tinnitus.</p></section>
-<section><label>After-sound tinnitus loudness (optional, 0–10): <input id="loudness" type="number" min="0" max="10" step="0.5"></label>
+<section id="feedback" aria-labelledby="feedback-title"><h2 id="feedback-title">3. Record your observation</h2><label>After-sound tinnitus loudness (optional, 0–10): <input id="loudness" type="number" min="0" max="10" step="0.5"></label>
 <p><label>Notes <textarea id="note" placeholder="e.g. quieter in the left ear, less intrusive, uncomfortable..."></textarea></label></p>
 <button id="save">Save note to current trial</button> <button id="export">Show local CSV observations</button></section>
+<section id="appearance" aria-labelledby="appearance-title">
+<h2 id="appearance-title">4. Appearance, accessibility and presets</h2>
+<p>These choices are stored in your operating system's user-data directory, separately from the installed application. No account is required.</p>
+<div class="grid">
+<label>Appearance <select id="theme"><option value="0">System</option><option value="1">Light</option><option value="2">Dark</option></select></label>
+<label>Font family <select id="font-family"><option value="0">System</option><option value="1">Sans serif</option><option value="2">Serif</option><option value="3">Monospace</option></select></label>
+<label>Text size <input id="font-size" type="range" min="80" max="200" step="10" value="100"><output id="size-output" for="font-size">100%</output></label>
+<label><input type="checkbox" id="high-contrast"> High contrast</label>
+<label><input type="checkbox" id="reduce-motion"> Reduce motion</label></div>
+<button id="save-prefs">Save my settings</button>
+<p><label>Preset name (current acoustic configuration) <input id="preset-name" maxlength="64" placeholder="e.g. Comfortable evening profile"></label>
+<button id="save-preset">Save named preset</button></p>
+<label>Saved profiles <select id="presets" aria-describedby="preset-info"><option value="">None yet</option></select></label>
+<button id="load-preset">Load selected preset for the next session</button>
+<p><button id="export-prefs">Export settings as JSON</button>
+<label>Import settings and presets from JSON <input type="file" accept=".json,application/json" id="import-file"></label>
+<button id="import-prefs">Import selected settings</button></p>
+<p class="muted">Profiles are stored outside installed application files. Export before reinstalling or replacing debug builds; imports are validated before replacement.</p>
+<p class="muted" id="preset-info">A preset records audio settings, not a medically validated treatment. The active study keeps its original configuration until restarted.</p>
+<p role="status" aria-live="polite" id="prefs-status">Loading preferences…</p>
+</section>
+</main>
 <script>
 const token = '__SESSION_TOKEN__';
 const api = async (url, data) => { const r = await fetch('/api/'+url,{method:'POST',headers:{'Content-Type':'application/json','X-Aural-Token':token},body:JSON.stringify(data??{})});const result=await r.json().catch(()=>({}));if(!r.ok)throw Error(result.error||r.statusText);return result; };
@@ -21,7 +84,7 @@ const status=document.querySelector('#status'),audio=document.querySelector('#so
 const mode=document.querySelector('#mode');
 let down=false, quiet=false, armed=false, active=false, post=false;
 function msg(x){status.textContent=x;}
-function resetInput(){down=false;quiet=false;armed=false;hold.classList.remove('down');hold.textContent=mode.value==='ReleaseWhenQuiet'?'HOLD WHILE AUDIBLE; RELEASE WHEN QUIET':mode.value==='ToggleQuiet'?'TAP WHEN QUIET (TOGGLE)':'PRESS AND HOLD WHEN QUIET';}
+function resetInput(){down=false;quiet=false;armed=false;keyboardQuietHeld=false;hold.classList.remove('down');hold.textContent=mode.value==='ReleaseWhenQuiet'?'HOLD WHILE AUDIBLE; RELEASE WHEN QUIET':mode.value==='ToggleQuiet'?'TAP WHEN QUIET (TOGGLE)':'PRESS AND HOLD WHEN QUIET';}
 function updateLabel(){hold.classList.toggle('down',quiet);hold.textContent=mode.value==='ReleaseWhenQuiet'?(down?'AUDIBLE — RELEASE WHEN QUIET':'RELEASED — QUIET MARK ACTIVE'):mode.value==='ToggleQuiet'?(quiet?'QUIET ACTIVE — TAP TO END':'TAP WHEN QUIET (TOGGLE)'):(quiet?'QUIET ACTIVE — RELEASE TO END':'PRESS AND HOLD WHEN QUIET');}
 async function setHold(v){
  if(!active&&!post)return;
@@ -37,10 +100,27 @@ function release(){void setHold(false);}
 mode.addEventListener('change',resetInput);
 hold.addEventListener('pointerdown', e=>{e.preventDefault();hold.setPointerCapture(e.pointerId);void setHold(true)});
 hold.addEventListener('pointerup',release);
-function cancelInput(){if(!active&&!post)return;resetInput();void api('hold',{down:false}).catch(e=>msg(e.message));}
+function cancelInput(){if(!active&&!post)return;keyboardQuietHeld=false;resetInput();void api('hold',{down:false}).catch(e=>msg(e.message));}
 hold.addEventListener('pointercancel',cancelInput);window.addEventListener('blur',cancelInput);
-document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){e.preventDefault();void setHold(true);}});
-document.addEventListener('keyup',e=>{if(e.code==='Space'){e.preventDefault();release();}});
+let keyboardQuietHeld=false;
+function keyboardShortcutAllowed(target){
+  if(!active&&!post)return false;
+  if(!target || !(target instanceof Element))return true;
+  if(target.closest('button,input,textarea,select,a,[role="button"],[role="checkbox"],[contenteditable="true"]'))return false;
+  return true;
+}
+document.addEventListener('keydown',e=>{
+  if(e.code!=='Space'||e.repeat||!keyboardShortcutAllowed(e.target))return;
+  keyboardQuietHeld=true;
+  e.preventDefault();
+  void setHold(true);
+});
+document.addEventListener('keyup',e=>{
+  if(e.code!=='Space'||!keyboardQuietHeld)return;
+  keyboardQuietHeld=false;
+  e.preventDefault();
+  release();
+});
 async function annotate(){const value=document.querySelector('#loudness').value;await api('annotate',{note:document.querySelector('#note').value,loudnessAfter:value===''?null:Number(value)})}
 document.querySelector('#save').onclick=async()=>{try{await annotate();msg('Annotation saved to current trial; it will persist when you advance.')}catch(e){msg(e.message)}};
 document.querySelector('#next').onclick=async()=>{try{await annotate();const trial=await api('next',{mode:mode.value});if(trial.finished){active=false;post=false;msg('Frequency sweep complete. Review observations and repeat sessions to assess reproducibility.');return;}
@@ -51,5 +131,146 @@ document.querySelector('#next').onclick=async()=>{try{await annotate();const tri
 }catch(e){msg('Could not start: '+e.message);}};
 audio.addEventListener('ended',async()=>{active=false;post=true;await api('ended');resetInput();msg('Stimulus stopped: re-arm your selected input mode to mark post-sound quiet. Observe at least 10 seconds.');});
 document.querySelector('#stop').onclick=async()=>{audio.pause();audio.currentTime=0;active=false;post=false;resetInput();mode.disabled=false;await api('interrupt');msg('Stopped. Incomplete trial excluded from ranking.');};
+document.querySelector('#reset-search').onclick=async()=>{
+ try{await api('reset');active=false;post=false;resetInput();mode.disabled=false;
+ msg('New search ready. Previous observations retained; saved audio profile will apply.');}
+ catch(e){msg('Could not reset: '+e.message);}
+};
+document.querySelector('#exit-app').addEventListener('click',async()=>{
+ audio.pause();try{await api('exit');msg('Desktop session stopping; you may close this tab.');}
+ catch(e){msg('Session may have stopped. Close this tab or check the host console.');}
+});
 document.querySelector('#export').onclick=async()=>{const r=await fetch('/api/export',{headers:{'X-Aural-Token':token}});const txt=await r.text();const blob=new Blob([txt],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='aural-quiet-search.csv';a.click();URL.revokeObjectURL(a.href);};
+
+const theme=document.querySelector('#theme'),fontFamily=document.querySelector('#font-family'),
+ fontSize=document.querySelector('#font-size'), highContrast=document.querySelector('#high-contrast'),
+ reduceMotion=document.querySelector('#reduce-motion'),prefsStatus=document.querySelector('#prefs-status'),
+ presetSelect=document.querySelector('#presets');
+let prefs=null;
+const darkQuery=window.matchMedia('(prefers-color-scheme: dark)');
+function appearance(){
+ const root=document.documentElement;
+ const choose=theme.value==='2'?'dark':theme.value==='1'?'light':(darkQuery.matches?'dark':'light');
+ root.dataset.theme=choose;
+ root.dataset.contrast=highContrast.checked?'high':'normal';
+ root.style.fontSize=fontSize.value+'%';
+ root.style.setProperty('--font',[
+ 'system-ui, sans-serif','Arial, Helvetica, sans-serif','Georgia, serif','ui-monospace, monospace'
+ ][Number(fontFamily.value)]);
+ document.querySelector('#size-output').textContent=fontSize.value+'%';
+ root.dataset.motion=reduceMotion.checked?'reduced':'system';
+}
+for(const item of [theme,fontFamily,fontSize,highContrast,reduceMotion])item.addEventListener('change',appearance);
+darkQuery.addEventListener?.('change',appearance);
+function numericField(id,min,max){
+ const node=document.getElementById(id);
+ const x=Number(node.value);
+ if(node.value.trim()===''||!Number.isFinite(x)||x<min||x>max){
+  node.setAttribute('aria-invalid','true');node.focus();
+  throw Error(id.replaceAll('-',' ')+' must be between '+min+' and '+max);
+ }
+ node.removeAttribute('aria-invalid');return x;
+}
+function earFields(prefix){
+ return {
+  frequencyHz:numericField(prefix+'-hz',200,10000),
+  gain:numericField(prefix+'-gain',0,1),
+  notchWidthOctaves:numericField(prefix+'-width',0.1,2),
+  colour:Number(document.getElementById(prefix+'-colour').value),
+  notchEnabled:document.getElementById(prefix+'-notch').checked
+ };
+}
+function getEditorStimulus(){
+ const old=prefs.lastStimulus;
+ return {...old,left:earFields('left'),right:earFields('right'),
+  modulationHz:numericField('modulation-hz',0,20),
+  modulationDepth:numericField('modulation-depth',0,0.9)};
+}
+function putEditorStimulus(s){
+ for(const side of ['left','right']){
+  const ear=s[side];
+  document.getElementById(side+'-hz').value=ear.frequencyHz;
+  document.getElementById(side+'-gain').value=ear.gain;
+  document.getElementById(side+'-width').value=ear.notchWidthOctaves;
+  document.getElementById(side+'-colour').value=String(ear.colour);
+  document.getElementById(side+'-notch').checked=ear.notchEnabled;
+ }
+ document.querySelector('#modulation-hz').value=s.modulationHz;
+ document.querySelector('#modulation-depth').value=s.modulationDepth;
+}
+function gatherPreferences(){
+ if(!prefs)throw Error('Settings have not loaded.');
+ return {...prefs,appearance:Number(theme.value),fontFamily:Number(fontFamily.value),
+  fontScalePercent:Number(fontSize.value),highContrast:highContrast.checked,
+  reduceMotion:reduceMotion.checked,
+  responseMode:['HoldWhenQuiet','ReleaseWhenQuiet','ToggleQuiet'].indexOf(mode.value),
+  lastStimulus:getEditorStimulus()};
+}
+async function persistPreferences(){
+ const next=gatherPreferences();
+ await api('preferences',next);
+ prefs=next;
+ document.getElementById('audio-config-status').textContent=
+  'Profile saved. Start a new search to apply it if the previous search has already begun.';
+}
+function renderPreferences(){
+ if(!prefs)return;
+ theme.value=String(prefs.appearance);
+ fontFamily.value=String(prefs.fontFamily);
+ fontSize.value=String(prefs.fontScalePercent);
+ highContrast.checked=!!prefs.highContrast;
+ reduceMotion.checked=!!prefs.reduceMotion;
+ mode.value=['HoldWhenQuiet','ReleaseWhenQuiet','ToggleQuiet'][prefs.responseMode]||'HoldWhenQuiet';
+ resetInput();appearance();
+ putEditorStimulus(prefs.lastStimulus);
+  presetSelect.replaceChildren(new Option('Choose a saved preset',''));
+ for(const p of prefs.presets||[])presetSelect.add(new Option(p.name,p.name));
+}
+async function reloadPreferences(){
+ try{
+  const r=await fetch('/api/preferences',{headers:{'X-Aural-Token':token}});
+  if(!r.ok)throw Error('Could not read settings');
+  prefs=await r.json();renderPreferences();
+  prefsStatus.textContent='Settings loaded from your user profile.';
+ }catch(e){prefsStatus.textContent='Preferences unavailable: '+e.message;}
+}
+document.querySelector('#save-prefs').addEventListener('click',async()=>{
+ try{await persistPreferences();prefsStatus.textContent='Appearance, response style and sound settings saved.';}
+ catch(e){prefsStatus.textContent='Could not save preferences: '+e.message;}
+});
+document.querySelector('#save-audio').addEventListener('click',async()=>{
+ try{await persistPreferences();}
+ catch(e){document.getElementById('audio-config-status').textContent='Cannot save: '+e.message;}
+});
+document.querySelector('#save-preset').addEventListener('click',async()=>{
+ const name=document.querySelector('#preset-name').value.trim();
+ if(!name)return prefsStatus.textContent='Enter a preset name.';
+ try{await persistPreferences();await api('preset',{name});await reloadPreferences();prefsStatus.textContent='Named preset saved with the currently edited left/right sound settings.';}
+ catch(e){prefsStatus.textContent='Preset not saved: '+e.message;}
+});
+document.querySelector('#load-preset').addEventListener('click',async()=>{
+ if(!presetSelect.value)return prefsStatus.textContent='Choose a preset first.';
+ try{await api('preset/load',{name:presetSelect.value});await reloadPreferences();
+  prefsStatus.textContent='Preset loaded; restart the active search to compare this profile.';}
+ catch(e){prefsStatus.textContent='Preset not loaded: '+e.message;}
+});
+void reloadPreferences();
+document.querySelector('#export-prefs').addEventListener('click',()=>{
+ if(!prefs)return;
+ const b=new Blob([JSON.stringify(prefs,null,2)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(b);
+ a.download='aural-observatory-preferences-v1.json';a.click();URL.revokeObjectURL(a.href);
+});
+document.querySelector('#import-prefs').addEventListener('click',async()=>{
+ const selected=document.querySelector('#import-file').files?.[0];
+ if(!selected)return prefsStatus.textContent='Choose a JSON file to import.';
+ if(selected.size>65536)return prefsStatus.textContent='Preferences exceed the 64 KiB import limit.';
+ try{
+  const body=JSON.parse(await selected.text());
+  await api('preferences',body);
+  await reloadPreferences();
+  prefsStatus.textContent='Settings and presets imported after validation.';
+ }catch(e){prefsStatus.textContent='Import was rejected; previous settings preserved: '+e.message;}
+});
+
 </script></body></html>

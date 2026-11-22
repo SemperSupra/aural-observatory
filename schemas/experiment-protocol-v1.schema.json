@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SemperSupra/aural-observatory/schemas/experiment-protocol-v1.schema.json",
+  "title": "Aural Observatory preregistered paired N-of-1 protocol",
+  "description": "Hypothesis and safety envelope. No acoustic output authorization. Synthetic data acceptable for CI only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion","experimentId","primaryOutcome","primaryContrast","randomSeed","pairs",
+    "stimulusDurationSeconds","postStimulusSeconds","washoutSeconds","active","control","automaticallyAdjustGain"],
+  "properties": {
+    "schemaVersion": {"const":1},
+    "experimentId":{"type":"string","minLength":1,"maxLength":80},
+    "primaryOutcome":{"enum":["poststimulus_loudness_0_10","poststimulus_distress_0_10"]},
+    "primaryContrast":{"const":"active_minus_control"},
+    "randomSeed":{"type":"integer","minimum":-2147483648,"maximum":2147483647},
+    "pairs":{"type":"integer","minimum":2,"maximum":120},
+    "stimulusDurationSeconds":{"type":"integer","minimum":5,"maximum":60},
+    "postStimulusSeconds":{"type":"integer","minimum":10,"maximum":180},
+    "washoutSeconds":{"type":"integer","minimum":30,"maximum":86400},
+    "automaticallyAdjustGain":{"const":false},
+    "frozenProtocolSha256":{"type":["string","null"],"pattern":"^[A-Fa-f0-9]{64}$"},
+    "active":{"$ref":"#/$defs/arm"},
+    "control":{"$ref":"#/$defs/arm"}
+  },
+  "$defs":{
+    "arm":{
+      "type":"object",
+      "additionalProperties":false,
+      "required":["id","algorithmId","stimulusSha256","digitalCeiling"],
+      "properties":{
+        "id":{"type":"string","minLength":1},
+        "algorithmId":{"type":"string","minLength":1},
+        "stimulusSha256":{"type":"string","pattern":"^[A-Fa-f0-9]{64}$"},
+        "digitalCeiling":{"type":"number","minimum":0,"maximum":0.08}
+      }
+    }
+  }
+}
