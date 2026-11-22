@@ -50,5 +50,6 @@
 
 - **R15 PR #38**: real C# source-backed Chromium/Firefox/WebKit × 320px phone, phone-landscape, tablet and desktop, plus inherited R9/R13/R14 tests. No claim of natural-touch/mobile Safari or human task time.
 - **New standard conformance:** Left from first tab wraps to last and Right from last wraps to first; Home/End and no-playback tested per browser.
+- **Visible small-screen choices:** at widths ≤500 CSS pixels the tab strip becomes a 2×2 grid with all four labeled destinations visible; prev/next arrows hidden in this breakpoint, because they would duplicate visible tabs. Normal vertical panel scrolling is unchanged. A new actual-browser geometry oracle checks 44px minimum targets and no tab clipping. This is a reversible UX hypothesis pending comparative human tests.
 - **Release HOLD** until real-device/manual accessible UX acceptance and parent source integration; no user claim that card navigation is intrinsically superior.
 - **Next disjoint workcells:** behavioral A/B harness with synthetic task receipts, screen reader/real touch input-only audit, hard STOP/status visibility audit, keyboard/arrow/focus cross-browser review. Local actor reports actual model/effort/runtime and GitHub receipts in issue #5, not copied chat prompts.
