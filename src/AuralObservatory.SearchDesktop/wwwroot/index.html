@@ -13,7 +13,7 @@ small,.muted{color:var(--muted)}textarea{width:100%;min-height:85px}#status{whit
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:1rem}.grid>*{min-width:0}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 fieldset{min-width:0;border:1px solid var(--border);border-radius:.6rem;padding:.85rem}legend{font-weight:600;padding:0 .4rem}fieldset input[type=number],fieldset select{width:100%}#configuration .grid{align-items:start}
-</style><link rel="stylesheet" href="/controller.css"></head>
+</style><link rel="stylesheet" href="/controller.css"><link rel="stylesheet" href="/mobile-controller.css"></head>
 <body><a href="#content" class="skip">Skip to the research controls</a>
 <header><h1>Aural Observatory · Quiet Search</h1>
 <nav aria-label="Sections"><a href="#configuration">Configure</a><a href="#spatial-controller">Spatial controller</a><a href="#experiment">Explore</a><a href="#feedback">Feedback</a><a href="#appearance">Appearance and presets</a></nav></header>
@@ -414,4 +414,4 @@ document.querySelector('#import-prefs').addEventListener('click',async()=>{
  }catch(e){prefsStatus.textContent='Import was rejected; previous settings preserved: '+e.message;}
 });
 
-</script><script src="/controller.js" defer></script></body></html>
+</script><script src="/controller.js" defer></script><script src="/mobile-controller.js" defer></script></body></html>
