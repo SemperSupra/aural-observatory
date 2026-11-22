@@ -22,3 +22,6 @@
 @media(max-width:500px){#aural-workspace-deck .deck-toolbar{padding:.45rem}#aural-workspace-deck .deck-tab{font-size:.94rem;padding:.5rem}#aural-workspace-deck .deck-count{flex:1}#aural-workspace-deck .deck-global-stop{width:100%}}
 @media(prefers-reduced-motion:reduce){#aural-workspace-deck .deck-tabs{scroll-behavior:auto}}
 @media(forced-colors:active){#aural-workspace-deck .deck-tab[aria-selected=true]{outline:2px solid Highlight}#aural-workspace-deck .deck-global-stop{forced-color-adjust:auto;border:2px solid ButtonText}}
+
+/* Avoid duplicate long-scroll navigation after the accessible deck initializes. */
+body > header nav[hidden]{display:none!important}
