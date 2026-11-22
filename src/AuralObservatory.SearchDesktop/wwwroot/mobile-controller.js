@@ -34,14 +34,14 @@
       <div id="touch-left-zone" class="aural-touch-zone" role="group" tabindex="0"
         aria-label="Left virtual analog stick: touch anywhere then drag to position sound around head; arrow keys adjust azimuth">
         <span class="aural-touch-zone-label">LEFT · DIRECTION</span>
-        <div id="touch-left-base" class="aural-touch-base" aria-hidden="true">
+        <div id="touch-left-base" class="aural-touch-base" aria-hidden="true" hidden>
           <div id="touch-left-knob" class="aural-touch-knob"></div>
         </div>
       </div>
       <div id="touch-right-zone" class="aural-touch-zone" role="group" tabindex="0"
         aria-label="Right virtual analog stick: drag up or down for elevation, right for distance; arrow keys adjust">
         <span class="aural-touch-zone-label">RIGHT · HEIGHT / DISTANCE</span>
-        <div id="touch-right-base" class="aural-touch-base" aria-hidden="true">
+        <div id="touch-right-base" class="aural-touch-base" aria-hidden="true" hidden>
           <div id="touch-right-knob" class="aural-touch-knob"></div>
         </div>
       </div>
