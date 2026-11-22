@@ -29,7 +29,15 @@ body:has(#aural-workspace-deck){overflow-wrap:anywhere}
   #aural-workspace-deck .deck-nav .deck-step{display:none}
   #aural-workspace-deck .deck-tab{min-width:0;width:100%;font-size:.94rem;padding:.5rem .35rem;white-space:normal;overflow-wrap:anywhere;line-height:1.22}
   #aural-workspace-deck .deck-count{flex:1}
-  #aural-workspace-deck .deck-global-stop{width:100%}
+  /* At 200% text the whole sticky toolbar may exceed viewport height.
+     STOP must remain independently reachable; reserve panel space beneath it. */
+  #aural-workspace-deck .deck-global-stop{
+    position:fixed;left:max(.6rem,env(safe-area-inset-left));
+    right:max(.6rem,env(safe-area-inset-right));
+    bottom:max(.6rem,env(safe-area-inset-bottom));
+    width:auto;z-index:60;
+  }
+  #aural-workspace-deck .deck-panel{padding-bottom:calc(7rem + env(safe-area-inset-bottom))}
 }
 @media(prefers-reduced-motion:reduce){#aural-workspace-deck .deck-tabs{scroll-behavior:auto}}
 @media(forced-colors:active){#aural-workspace-deck .deck-tab[aria-selected=true]{outline:2px solid Highlight}#aural-workspace-deck .deck-global-stop{forced-color-adjust:auto;border:2px solid ButtonText}}
