@@ -39,6 +39,10 @@
     "PR32": {
       "url": "https://github.com/SemperSupra/aural-observatory/pull/32",
       "class": "native_compile_and_synthetic"
+    },
+    "PR37": {
+      "url": "https://github.com/SemperSupra/aural-observatory/pull/37",
+      "class": "visual_only_static_pwa_source_candidate"
     }
   },
   "platforms": [
@@ -51,6 +55,7 @@
     "ipad",
     "desktop_web",
     "mobile_browser",
+    "visual_pwa",
     "automation_cli",
     "agent_api"
   ],
@@ -92,7 +97,8 @@
         "desktop_web": "browser_tested",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "PR16",
@@ -129,7 +135,8 @@
         "desktop_web": "browser_tested",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "PR23",
@@ -165,7 +172,8 @@
         "desktop_web": "browser_tested",
         "mobile_browser": "emulated_browser",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "PR30",
@@ -204,7 +212,8 @@
         "desktop_web": "browser_tested",
         "mobile_browser": "emulated_browser",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "PR29"
@@ -240,7 +249,8 @@
         "desktop_web": "browser_tested",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "PR24",
@@ -277,7 +287,8 @@
         "desktop_web": "browser_tested",
         "mobile_browser": "emulated_browser",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "PR29",
@@ -316,7 +327,8 @@
         "desktop_web": "browser_tested",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "PR16",
@@ -353,7 +365,8 @@
         "desktop_web": "browser_tested",
         "mobile_browser": "emulated_browser",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "PR31"
@@ -389,7 +402,8 @@
         "desktop_web": "not_demonstrated",
         "mobile_browser": "emulated_browser",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "PR31",
@@ -425,7 +439,8 @@
         "desktop_web": "source_compiled",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "PR16",
@@ -461,7 +476,8 @@
         "desktop_web": "not_demonstrated",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "test_harness_only",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "DLE"
@@ -496,7 +512,8 @@
         "desktop_web": "not_demonstrated",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "test_harness_only",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "DLE",
@@ -532,7 +549,8 @@
         "desktop_web": "not_demonstrated",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "ci_qualified",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "PR31"
@@ -567,7 +585,8 @@
         "desktop_web": "not_demonstrated",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "ci_qualified",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "PR32"
@@ -602,7 +621,8 @@
         "desktop_web": "not_demonstrated",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "DLE"
@@ -636,7 +656,8 @@
         "desktop_web": "not_demonstrated",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "DLE"
@@ -671,7 +692,8 @@
         "desktop_web": "not_demonstrated",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "DLE"
@@ -705,7 +727,8 @@
         "desktop_web": "not_demonstrated",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "DLE"
@@ -739,7 +762,8 @@
         "desktop_web": "not_demonstrated",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "DLE"
@@ -773,7 +797,8 @@
         "desktop_web": "not_demonstrated",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "DLE"
@@ -807,7 +832,8 @@
         "desktop_web": "not_demonstrated",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "DLE"
@@ -842,7 +868,8 @@
         "desktop_web": "not_demonstrated",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "DLE"
@@ -876,13 +903,127 @@
         "desktop_web": "not_demonstrated",
         "mobile_browser": "not_demonstrated",
         "automation_cli": "not_demonstrated",
-        "agent_api": "not_demonstrated"
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
       },
       "evidence": [
         "DLE"
       ],
       "releaseBlockers": [
         "typed errors, retry budget, human notification"
+      ]
+    },
+    {
+      "id": "H11",
+      "audience": "human",
+      "goal": "Explore installable offline visual-only PWA without assuming sound works",
+      "entry": "public_visual_pwa",
+      "steps": [
+        "open_scope",
+        "inspect_no_audio_label",
+        "adjust_visual_position",
+        "offline_reload",
+        "reset"
+      ],
+      "positive": "Visual controls and offline shell work while clearly disclosing no audio",
+      "negative": "No sound, health record, remote control or treatment claim",
+      "precondition": "Public static candidate; no user session",
+      "authorization": "human",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "emulated_browser",
+        "visual_pwa": "input_only",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated"
+      },
+      "evidence": [
+        "PR37"
+      ],
+      "releaseBlockers": [
+        "real PWA install and offline device HIL",
+        "full standalone browser DSP parity",
+        "current preview not deployed/approved"
+      ]
+    },
+    {
+      "id": "A08",
+      "audience": "automation",
+      "goal": "Discover truthful static PWA facts as structured data",
+      "entry": "app-info.json",
+      "steps": [
+        "get_static_manifest",
+        "validate_schema_version",
+        "verify_acoustic_output_false",
+        "report_unknown"
+      ],
+      "positive": "Machine-readable metadata matches no-audio visual-only UI",
+      "negative": "No automation action may create audio or imply an agent control endpoint",
+      "precondition": "Public static candidate",
+      "authorization": "automation",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "visual_pwa": "input_only",
+        "automation_cli": "test_harness_only",
+        "agent_api": "not_demonstrated"
+      },
+      "evidence": [
+        "PR37"
+      ],
+      "releaseBlockers": [
+        "live Pages endpoint not verified",
+        "stable external API beyond read-only metadata absent"
+      ]
+    },
+    {
+      "id": "G07",
+      "audience": "agent",
+      "goal": "Read public visual PWA capabilities without escalating privilege",
+      "entry": "static_app_info",
+      "steps": [
+        "fetch_app_info",
+        "check_remote_control_false",
+        "check_treatment_false",
+        "decline_audio_request"
+      ],
+      "positive": "Agent truthfully states PWA can only demonstrate controls",
+      "negative": "No audio.start/session.observe or user impersonation from public metadata",
+      "precondition": "Read-only public context",
+      "authorization": "read_only",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "visual_pwa": "input_only",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated"
+      },
+      "evidence": [
+        "PR37"
+      ],
+      "releaseBlockers": [
+        "dedicated authenticated agent API absent",
+        "physical playback authority never available from public preview"
       ]
     }
   ]
