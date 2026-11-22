@@ -6,13 +6,6 @@ on:
       - 'docs/R15-CARD-AB-CLOUD-RDTE.md'
       - '.github/workflows/r15-card-ab-rdte.yml'
       - 'src/AuralObservatory.SearchDesktop/**'
-  push:
-    branches: ['test/r15-card-ab-cloud-rdte']
-    paths:
-      - 'tests/desktop-e2e/r15-card-ab-rdte.cjs'
-      - 'docs/R15-CARD-AB-CLOUD-RDTE.md'
-      - '.github/workflows/r15-card-ab-rdte.yml'
-      - 'src/AuralObservatory.SearchDesktop/**'
 permissions: {contents: read}
 concurrency:
   group: r15-ab-${{ github.event_name }}-${{ github.ref }}
