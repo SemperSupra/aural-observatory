@@ -59,6 +59,8 @@ public sealed class MainActivity : Activity
     private UserPreferences _preferences = UserPreferences.Default;
     private string _preferencesPath = "";
     private LinearLayout _rootPanel = null!;
+    private NativeSpatialTouchSurface? _nativeSpatialTouch;
+    private Dialog? _nativeSpatialDialog;
     private Spinner _appearanceChoice = null!, _fontChoice = null!, _sizeChoice = null!, _presetChoice = null!;
     private CheckBox _contrastChoice = null!, _motionChoice = null!;
     private EditText _presetName = null!;
@@ -134,6 +136,7 @@ public sealed class MainActivity : Activity
         _sweepEndHz = AddNumber(soundPanel, "Sweep end Hz (200–10000)", "8000");
         _sweepDuration = AddNumber(soundPanel, "Sweep seconds (8–15)", "10");
         AddButton(soundPanel, "START ONE-TIME SWEEP", StartSweepPreview);
+        AddButton(soundPanel, "OPEN NATIVE SPATIAL TOUCH CONTROLS (INPUT ONLY)", ShowNativeSpatialTouch);
         var sensorPanel = AddExpandableSection(layout,"Sensors and BLE measurements",false);
         AddText(sensorPanel, "LIVE HEART-RATE SENSOR (OPTIONAL)", 19);
         AddText(sensorPanel, "Garmin HRM-Pro Plus / compatible BLE 0x180D strap. Live BPM and optional RR intervals. These do NOT detect tinnitus suppression. No upload or cloud connection.", 12);
@@ -187,6 +190,61 @@ public sealed class MainActivity : Activity
         _quietMode.SetSelection((int)_preferences.ResponseMode);
         RefreshPresetChoices();
         ApplyAppearance();
+    }
+
+    // R13 native Android UI-only capability. It uses real Android touch
+    // MotionEvents; unlike the separate desktop/browser overlay it cannot
+    // route spatial position into AudioTrack without qualified native DSP.
+    // No audio is started, changed, or raised from pad motion.
+    private void ShowNativeSpatialTouch()
+    {
+        if (_nativeSpatialDialog is not null) return;
+        var dialog = new Dialog(this);
+        var panel = new LinearLayout(this) { Orientation = Android.Widget.Orientation.Vertical };
+        int margin = (int)(12 * (Resources?.DisplayMetrics?.Density ?? 1f));
+        panel.SetPadding(margin, margin, margin, margin);
+        var title = new TextView(this)
+        {
+            Text = "Native spatial touch · INPUT ONLY. Left finger moves direction; right moves height/distance. Position is not routed to headphones; no verified HRTF, SPL or treatment.",
+            TextSize = 15
+        };
+        panel.AddView(title);
+        var stop = new Button(this) { Text = "STOP AUDIO" };
+        stop.Click += (_, _) => StopPreview();
+        panel.AddView(stop);
+        var close = new Button(this) { Text = "CLOSE + STOP" };
+        close.Click += (_, _) =>
+        {
+            StopPreview();
+            _nativeSpatialTouch?.CancelInput();
+            dialog.Dismiss();
+            _nativeSpatialTouch = null;
+            _nativeSpatialDialog = null;
+        };
+        panel.AddView(close);
+        var status = new TextView(this)
+        {
+            Text = "Touch position: front · 0° / 0° / 1.0×. Input demonstration; not audible spatialization.",
+            TextSize = 14,
+            AccessibilityLiveRegion = AccessibilityLiveRegion.Polite
+        };
+        panel.AddView(status);
+        var surface = new NativeSpatialTouchSurface(this);
+        _nativeSpatialTouch = surface;
+        surface.Changed += state =>
+            status.Text = $"Touch position: azimuth {state.AzimuthDegrees:F0}°, elevation {state.ElevationDegrees:F0}°, distance {state.DistanceScale:F1}× (INPUT ONLY).";
+        int height = (int)(280 * (Resources?.DisplayMetrics?.Density ?? 1f));
+        panel.AddView(surface, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MatchParent, height));
+        var center = new Button(this) { Text = "CENTER TOUCH POSITION" };
+        center.Click += (_, _) => surface.Center();
+        panel.AddView(center);
+        dialog.SetCancelable(false); // Explicit Close+STOP or lifecycle cancellation.
+        dialog.SetContentView(panel);
+        _nativeSpatialDialog = dialog;
+        dialog.Show();
+        dialog.Window?.SetLayout(ViewGroup.LayoutParams.MatchParent,
+            ViewGroup.LayoutParams.WrapContent);
     }
 
     private void StartSweepPreview()
@@ -333,6 +391,10 @@ public sealed class MainActivity : Activity
     protected override void OnPause()
     {
         StopPreview();
+        _nativeSpatialTouch?.CancelInput();
+        _nativeSpatialDialog?.Dismiss();
+        _nativeSpatialTouch = null;
+        _nativeSpatialDialog = null;
         if (_search?.State is SearchState.Stimulating or SearchState.PostStimulus)
             _search.MarkQuiet(false, QuietSearch.NowSeconds());
         _quietInput.Cancel();
