@@ -67,12 +67,37 @@ var silent = eq with { Right = eq.Right with { Gain = 0 } };
 var b = new short[8192];
 new StimulusEngine(silent).Render(b,4096);
 Check(Enumerable.Range(0,4096).All(i=>b[2*i+1]==0),"zero-gain right channel isolation");
+
+// R10 independent oracle: numeric edges produced by the original R3 WebAudio/RBJ reference
+// at 48 kHz, not fitted to this C# implementation or an acoustic/headphone measurement.
+var notchFixtures = new[] {
+    (center: 1000d, nominal: 0.25d, lower: 917.2122776563322, upper: 1090.213507871047, width: 0.24928312882958253),
+    (center: 4000d, nominal: 0.5d, lower: 3386.0527997059844, upper: 4713.154167347986, width: 0.47708840293061516),
+    (center: 8000d, nominal: 1d, lower: 5922.041146292395, upper: 10461.738795624602, width: 0.8209562354679957),
+    (center: 10000d, nominal: 0.5d, lower: 8755.154046118649, upper: 11301.542973799813, width: 0.36831528586050777)
+};
+var notchBandwidthGolden = notchFixtures.Select(f => {
+    var m = NotchResponseAnalysis.Measure(f.center, f.nominal, sr);
+    Check(Math.Abs(m.Lower3dBHz - f.lower) < 0.0001, $"R3 reference lower notch edge {f.center} Hz");
+    Check(Math.Abs(m.Upper3dBHz - f.upper) < 0.0001, $"R3 reference upper notch edge {f.center} Hz");
+    Check(Math.Abs(m.MeasuredWidthOctaves - f.width) < 0.000001,
+        $"R3 reference measured digital bandwidth {f.center} Hz");
+    return m;
+}).ToArray();
+Check(notchBandwidthGolden[3].MeasuredWidthOctaves < 0.4,
+    "10 kHz nominal half-octave response differs substantially from measured digital bandwidth");
+try {
+    NotchResponseAnalysis.Measure(10000, 0.5, 16000);
+    throw new Exception("Accepted notch above Nyquist");
+} catch (ArgumentOutOfRangeException) { Console.WriteLine("PASS: reject notch beyond Nyquist"); }
+
 var evidence = new {
     schemaVersion = 1, engine = "AuralObservatory.Core.StimulusEngine",
     sampleFormat = "48 kHz signed PCM16 interleaved stereo",
     evidenceType = "generated-digital-audio-only",
     notPhysicalSpl = true, sourceSeed = 97531,
     analysis = "Hann-windowed Goertzel periodogram; overlapping frames excluded from first 4096-sample warmup",
+    notchBandwidthGolden,
     results
 };
 Directory.CreateDirectory("artifacts/audio");
