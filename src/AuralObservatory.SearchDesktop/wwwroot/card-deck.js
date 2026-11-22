@@ -55,6 +55,9 @@
     }
     // The safety introduction remains visible above the deck.
     main.appendChild(deck);
+    // One navigation system: retain the classic header nav only as a no-JS fallback.
+    const legacyNav=document.querySelector('body > header nav');
+    if (legacyNav) legacyNav.hidden=true;
     // Keep future source additions visible rather than hiding them silently.
     let current = 0;
     function playing() {
