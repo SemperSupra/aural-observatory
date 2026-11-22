@@ -1,0 +1,1030 @@
+{
+  "schema_version": "aural.journey.evaluation.r14",
+  "date": "2026-11-22",
+  "scope": "source-and-test-evidence-only",
+  "release_authority": "HOLD",
+  "evidence_catalog": {
+    "DLE": {
+      "url": "https://github.com/SemperSupra/aural-observatory/issues/5",
+      "class": "design_and_policy"
+    },
+    "PR16": {
+      "url": "https://github.com/SemperSupra/aural-observatory/pull/16",
+      "class": "source_and_ci"
+    },
+    "PR20": {
+      "url": "https://github.com/SemperSupra/aural-observatory/pull/20",
+      "class": "source_and_ci"
+    },
+    "PR23": {
+      "url": "https://github.com/SemperSupra/aural-observatory/pull/23",
+      "class": "source_and_ci"
+    },
+    "PR24": {
+      "url": "https://github.com/SemperSupra/aural-observatory/pull/24",
+      "class": "source_and_ci"
+    },
+    "PR29": {
+      "url": "https://github.com/SemperSupra/aural-observatory/pull/29",
+      "class": "browser_and_source"
+    },
+    "PR30": {
+      "url": "https://github.com/SemperSupra/aural-observatory/pull/30",
+      "class": "browser_and_source"
+    },
+    "PR31": {
+      "url": "https://github.com/SemperSupra/aural-observatory/pull/31",
+      "class": "emulated_browser_ci"
+    },
+    "PR32": {
+      "url": "https://github.com/SemperSupra/aural-observatory/pull/32",
+      "class": "native_compile_and_synthetic"
+    },
+    "PR37": {
+      "url": "https://github.com/SemperSupra/aural-observatory/pull/37",
+      "class": "visual_only_static_pwa_source_candidate"
+    }
+  },
+  "platforms": [
+    "windows_desktop",
+    "macos_desktop",
+    "linux_desktop",
+    "android_phone",
+    "android_tablet",
+    "iphone",
+    "ipad",
+    "desktop_web",
+    "mobile_browser",
+    "visual_pwa",
+    "automation_cli",
+    "agent_api"
+  ],
+  "states": [
+    "not_demonstrated",
+    "planned",
+    "input_only",
+    "test_harness_only",
+    "source_compiled",
+    "emulated_browser",
+    "browser_tested",
+    "ci_qualified",
+    "real_device_qualified"
+  ],
+  "journeys": [
+    {
+      "id": "H01",
+      "audience": "human",
+      "goal": "Find and understand current mode, risk and capabilities",
+      "entry": "desktop_home",
+      "steps": [
+        "launch_local",
+        "inspect_mode",
+        "inspect_safety",
+        "choose_next"
+      ],
+      "positive": "User can tell manual preview from scored trial",
+      "negative": "Never imply headphone SPL measured",
+      "precondition": "local session opened",
+      "authorization": "human",
+      "support": {
+        "windows_desktop": "source_compiled",
+        "macos_desktop": "source_compiled",
+        "linux_desktop": "source_compiled",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "browser_tested",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "PR16",
+        "PR24"
+      ],
+      "releaseBlockers": [
+        "real novice comprehension study",
+        "release build install UX"
+      ]
+    },
+    {
+      "id": "H02",
+      "audience": "human",
+      "goal": "Configure ear-specific bounded sound with reversible controls",
+      "entry": "manual_config",
+      "steps": [
+        "select_ear",
+        "choose_reference",
+        "validate",
+        "prepare"
+      ],
+      "positive": "Invalid input rejected and ear isolation preserved",
+      "negative": "No unvalidated start/aural trial cross-contamination",
+      "precondition": "explicit user settings",
+      "authorization": "human",
+      "support": {
+        "windows_desktop": "source_compiled",
+        "macos_desktop": "source_compiled",
+        "linux_desktop": "source_compiled",
+        "android_phone": "source_compiled",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "browser_tested",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "PR23",
+        "PR24"
+      ],
+      "releaseBlockers": [
+        "physical ear and headset checks"
+      ]
+    },
+    {
+      "id": "H03",
+      "audience": "human",
+      "goal": "Move manual sound around head using two floating touch joysticks",
+      "entry": "touch_overlay",
+      "steps": [
+        "opt_in",
+        "two_fingers",
+        "orient",
+        "release"
+      ],
+      "positive": "Two touch IDs stay isolated and positions bounded",
+      "negative": "Touch movement cannot start sound or score trial",
+      "precondition": "manual reference mode, browser on same host",
+      "authorization": "human",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "input_only",
+        "android_tablet": "input_only",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "browser_tested",
+        "mobile_browser": "emulated_browser",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "PR30",
+        "PR31",
+        "PR32"
+      ],
+      "releaseBlockers": [
+        "native Android audio spatialization",
+        "real phone/tablet touch checks",
+        "iPad Safari hardware"
+      ]
+    },
+    {
+      "id": "H04",
+      "audience": "human",
+      "goal": "Use Xbox/Logitech physical controller with profile diagnostics",
+      "entry": "gamepad_settings",
+      "steps": [
+        "discover_device",
+        "map_axes",
+        "invert",
+        "stop"
+      ],
+      "positive": "User can inspect axes and select mappings",
+      "negative": "No controller arrival, motion or mismatch starts audio",
+      "precondition": "OS/browser exposes gamepad",
+      "authorization": "human",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "browser_tested",
+        "mobile_browser": "emulated_browser",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "PR29"
+      ],
+      "releaseBlockers": [
+        "real Xbox and Logitech HIL",
+        "legacy DirectInput visibility"
+      ]
+    },
+    {
+      "id": "H05",
+      "audience": "human",
+      "goal": "Start bounded reference tone with deliberate presence",
+      "entry": "manual_preview",
+      "steps": [
+        "configure",
+        "prepare",
+        "explicit_play",
+        "listen"
+      ],
+      "positive": "Playback starts only on permitted explicit gesture",
+      "negative": "No autoplay from UI mount, gamepad poll or agent",
+      "precondition": "eligible manual reference tone",
+      "authorization": "human",
+      "support": {
+        "windows_desktop": "source_compiled",
+        "macos_desktop": "source_compiled",
+        "linux_desktop": "source_compiled",
+        "android_phone": "source_compiled",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "browser_tested",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "PR24",
+        "PR29"
+      ],
+      "releaseBlockers": [
+        "real route and SPL measurement",
+        "physical user activation"
+      ]
+    },
+    {
+      "id": "H06",
+      "audience": "human",
+      "goal": "STOP across pointer, keyboard, gamepad, lifecycle and loss of focus",
+      "entry": "stop_now",
+      "steps": [
+        "start_if_permitted",
+        "stop",
+        "close_or_blur",
+        "verify"
+      ],
+      "positive": "User retains visible STOP; host observes actual silence",
+      "negative": "Do not treat STOP accepted as device silence",
+      "precondition": "any current state",
+      "authorization": "human",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "source_compiled",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "browser_tested",
+        "mobile_browser": "emulated_browser",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "PR29",
+        "PR31",
+        "PR32"
+      ],
+      "releaseBlockers": [
+        "hardware buffer and route STOP",
+        "emergency on host crash"
+      ]
+    },
+    {
+      "id": "H07",
+      "audience": "human",
+      "goal": "Run randomized quiet search without preview contamination",
+      "entry": "experiment",
+      "steps": [
+        "start_trial",
+        "release",
+        "post_trial",
+        "score",
+        "export"
+      ],
+      "positive": "Trial phase and personal observations remain separated",
+      "negative": "Manual HRTF/gamepad must not mutate trial",
+      "precondition": "authorized C# study session",
+      "authorization": "human",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "source_compiled",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "browser_tested",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "PR16",
+        "PR23"
+      ],
+      "releaseBlockers": [
+        "study consent/usability",
+        "physical acoustic and clinical qualification"
+      ]
+    },
+    {
+      "id": "H08",
+      "audience": "human",
+      "goal": "Use low-vision/screen reader/one-handed access",
+      "entry": "accessibility",
+      "steps": [
+        "zoom_200",
+        "keyboard",
+        "screenreader",
+        "single_pointer_alternative"
+      ],
+      "positive": "No focus trap or hidden STOP; equivalent single-pointer control",
+      "negative": "Joystick-only drag cannot be sole way to set position",
+      "precondition": "accessibility enabled",
+      "authorization": "human",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "browser_tested",
+        "mobile_browser": "emulated_browser",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "PR31"
+      ],
+      "releaseBlockers": [
+        "real TalkBack/VoiceOver/NVDA",
+        "keyboard dialog focus containment"
+      ]
+    },
+    {
+      "id": "H09",
+      "audience": "human",
+      "goal": "Rotate device, enter background, recover without surprise playback",
+      "entry": "lifecycle",
+      "steps": [
+        "start_input",
+        "rotate",
+        "background",
+        "resume"
+      ],
+      "positive": "Touch capture clears, audio stops, session truth retained",
+      "negative": "No stale finger resumes or auto restarts audio",
+      "precondition": "device running",
+      "authorization": "human",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "source_compiled",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "emulated_browser",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "PR31",
+        "PR32"
+      ],
+      "releaseBlockers": [
+        "real OS task switch and Bluetooth route change"
+      ]
+    },
+    {
+      "id": "H10",
+      "audience": "human",
+      "goal": "Deploy and operate application without network or extra accounts",
+      "entry": "install_start",
+      "steps": [
+        "download_candidate",
+        "install",
+        "launch",
+        "offline"
+      ],
+      "positive": "Local-only session and accessible UI; no telemetry",
+      "negative": "Browser loopback must not be falsely advertised as remote mobile app",
+      "precondition": "source candidate",
+      "authorization": "human",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "source_compiled",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "source_compiled",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "PR16",
+        "PR23"
+      ],
+      "releaseBlockers": [
+        "signed installer user test",
+        "iOS app not implemented"
+      ]
+    },
+    {
+      "id": "A01",
+      "audience": "automation",
+      "goal": "Validate profiles without playing sound",
+      "entry": "profile.validate",
+      "steps": [
+        "generate_fixture",
+        "validate",
+        "compare_receipt"
+      ],
+      "positive": "Deterministic validation and clear exit code",
+      "negative": "No hardware side effect from validation",
+      "precondition": "synthetic profile",
+      "authorization": "automation",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "test_harness_only",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "DLE"
+      ],
+      "releaseBlockers": [
+        "stable public CLI command"
+      ]
+    },
+    {
+      "id": "A02",
+      "audience": "automation",
+      "goal": "Generate deterministic DSP blocks and report provenance",
+      "entry": "stimulus.generate-block",
+      "steps": [
+        "pin_seed",
+        "generate",
+        "hash",
+        "diff"
+      ],
+      "positive": "Repeatable sample digest and version",
+      "negative": "No user audio or personal media in CI",
+      "precondition": "public fixture",
+      "authorization": "automation",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "test_harness_only",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "DLE",
+        "PR20"
+      ],
+      "releaseBlockers": [
+        "versioned CLI receipts"
+      ]
+    },
+    {
+      "id": "A03",
+      "audience": "automation",
+      "goal": "Run responsive/browser journey tests from CI",
+      "entry": "ui.qualify",
+      "steps": [
+        "select_browser",
+        "run_viewports",
+        "collect_axe",
+        "publish"
+      ],
+      "positive": "Screenshots, failures and exact workflow run available",
+      "negative": "Never call emulation actual hardware HIL",
+      "precondition": "public runner",
+      "authorization": "automation",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "ci_qualified",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "PR31"
+      ],
+      "releaseBlockers": [
+        "journey-specific regression tests",
+        "real hardware"
+      ]
+    },
+    {
+      "id": "A04",
+      "audience": "automation",
+      "goal": "Verify native UI/event contract and Android compile",
+      "entry": "native.qualify",
+      "steps": [
+        "compile",
+        "run_intent_oracle",
+        "publish_artifact"
+      ],
+      "positive": "Native app and input projector compile, provenance recorded",
+      "negative": "Compile cannot claim actual TalkBack or working headset",
+      "precondition": "public CI",
+      "authorization": "automation",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "ci_qualified",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "PR32"
+      ],
+      "releaseBlockers": [
+        "actual Android instrumentation"
+      ]
+    },
+    {
+      "id": "A05",
+      "audience": "automation",
+      "goal": "Export local observation data with consent and schema provenance",
+      "entry": "observation.export",
+      "steps": [
+        "request_scope",
+        "confirm_user",
+        "export",
+        "hash"
+      ],
+      "positive": "Only authorized local output, typed versioned schema",
+      "negative": "No public CI user data or agent raw-record fetch",
+      "precondition": "local owner data",
+      "authorization": "human_required",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "DLE"
+      ],
+      "releaseBlockers": [
+        "consent boundary and portable export CLI"
+      ]
+    },
+    {
+      "id": "A06",
+      "audience": "automation",
+      "goal": "Request STOP while persistence fails",
+      "entry": "audio.stop",
+      "steps": [
+        "inject_storage_failure",
+        "send_stop",
+        "observe_host"
+      ],
+      "positive": "Safety path remains available and status truthful",
+      "negative": "Failed outbox write is not physical STOP",
+      "precondition": "synthetic fault",
+      "authorization": "host_verified",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "DLE"
+      ],
+      "releaseBlockers": [
+        "host direct STOP independent of storage"
+      ]
+    },
+    {
+      "id": "A07",
+      "audience": "automation",
+      "goal": "Recover pipeline after interruption with idempotent receipts",
+      "entry": "workflow.recover",
+      "steps": [
+        "interrupt",
+        "restart",
+        "reconcile",
+        "repeat"
+      ],
+      "positive": "No duplicate external playback or incorrect success claim",
+      "negative": "No effect re-dispatched from stale command receipt",
+      "precondition": "interrupted synthetic session",
+      "authorization": "host_verified",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "DLE"
+      ],
+      "releaseBlockers": [
+        "durable idempotency and host effect authority"
+      ]
+    },
+    {
+      "id": "G01",
+      "audience": "agent",
+      "goal": "Discover capabilities and limitations read-only",
+      "entry": "capabilities.read",
+      "steps": [
+        "query_descriptor",
+        "check_version",
+        "check_physical_audio_false"
+      ],
+      "positive": "Machine-readable supported actions and uncertainty",
+      "negative": "No invented APIs or hardware support",
+      "precondition": "authorized agent process",
+      "authorization": "read_only",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "DLE"
+      ],
+      "releaseBlockers": [
+        "typed agent endpoint and ACL"
+      ]
+    },
+    {
+      "id": "G02",
+      "audience": "agent",
+      "goal": "Inspect current session and observable revision",
+      "entry": "session.observe",
+      "steps": [
+        "identify_session",
+        "read_state",
+        "check_revision"
+      ],
+      "positive": "Read-only revision+state with provenance",
+      "negative": "No visibility into sensitive journal by default",
+      "precondition": "principal scoped",
+      "authorization": "read_only",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "DLE"
+      ],
+      "releaseBlockers": [
+        "privacy review and state endpoint"
+      ]
+    },
+    {
+      "id": "G03",
+      "audience": "agent",
+      "goal": "Suggest spatial change without unauthorized playback",
+      "entry": "spatial.propose",
+      "steps": [
+        "construct_intent",
+        "validate_bounds",
+        "present_to_user"
+      ],
+      "positive": "Proposed vector is visible for human preemption",
+      "negative": "Agent can never invent human gesture or silently start audio",
+      "precondition": "user directed agent",
+      "authorization": "human_required",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "DLE"
+      ],
+      "releaseBlockers": [
+        "safe propose/approve semantics"
+      ]
+    },
+    {
+      "id": "G04",
+      "audience": "agent",
+      "goal": "Human preempts concurrent agent with STOP",
+      "entry": "human.preempt",
+      "steps": [
+        "agent_pending",
+        "human_stop",
+        "reconcile_epoch"
+      ],
+      "positive": "STOP dominates stale agent request; every actor observes reversal",
+      "negative": "No agent after-STOP resume or duplicated effect",
+      "precondition": "shared session",
+      "authorization": "human_preempt",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "DLE"
+      ],
+      "releaseBlockers": [
+        "CAS/epoch/idempotency backend not implemented"
+      ]
+    },
+    {
+      "id": "G05",
+      "audience": "agent",
+      "goal": "Request action through explicit human approval",
+      "entry": "audio.request",
+      "steps": [
+        "draft_request",
+        "human_approval",
+        "host_authorize",
+        "observe"
+      ],
+      "positive": "Only trusted host can execute after actual human grant",
+      "negative": "Approval or host_started cannot be forged by JSON",
+      "precondition": "selected approved device",
+      "authorization": "human_required",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "DLE"
+      ],
+      "releaseBlockers": [
+        "trusted host admission + lease/stop"
+      ]
+    },
+    {
+      "id": "G06",
+      "audience": "agent",
+      "goal": "Handle offline, revoked permission and failure gracefully",
+      "entry": "error.recover",
+      "steps": [
+        "receive_failure",
+        "avoid_retry_storm",
+        "escalate_to_human"
+      ],
+      "positive": "Typed failure, no blind retries, no uncertain success",
+      "negative": "No emergency override of user policy",
+      "precondition": "network unavailable or permission denied",
+      "authorization": "read_only",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated",
+        "visual_pwa": "not_demonstrated"
+      },
+      "evidence": [
+        "DLE"
+      ],
+      "releaseBlockers": [
+        "typed errors, retry budget, human notification"
+      ]
+    },
+    {
+      "id": "H11",
+      "audience": "human",
+      "goal": "Explore installable offline visual-only PWA without assuming sound works",
+      "entry": "public_visual_pwa",
+      "steps": [
+        "open_scope",
+        "inspect_no_audio_label",
+        "adjust_visual_position",
+        "offline_reload",
+        "reset"
+      ],
+      "positive": "Visual controls and offline shell work while clearly disclosing no audio",
+      "negative": "No sound, health record, remote control or treatment claim",
+      "precondition": "Public static candidate; no user session",
+      "authorization": "human",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "emulated_browser",
+        "visual_pwa": "input_only",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated"
+      },
+      "evidence": [
+        "PR37"
+      ],
+      "releaseBlockers": [
+        "real PWA install and offline device HIL",
+        "full standalone browser DSP parity",
+        "current preview not deployed/approved"
+      ]
+    },
+    {
+      "id": "A08",
+      "audience": "automation",
+      "goal": "Discover truthful static PWA facts as structured data",
+      "entry": "app-info.json",
+      "steps": [
+        "get_static_manifest",
+        "validate_schema_version",
+        "verify_acoustic_output_false",
+        "report_unknown"
+      ],
+      "positive": "Machine-readable metadata matches no-audio visual-only UI",
+      "negative": "No automation action may create audio or imply an agent control endpoint",
+      "precondition": "Public static candidate",
+      "authorization": "automation",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "visual_pwa": "input_only",
+        "automation_cli": "test_harness_only",
+        "agent_api": "not_demonstrated"
+      },
+      "evidence": [
+        "PR37"
+      ],
+      "releaseBlockers": [
+        "live Pages endpoint not verified",
+        "stable external API beyond read-only metadata absent"
+      ]
+    },
+    {
+      "id": "G07",
+      "audience": "agent",
+      "goal": "Read public visual PWA capabilities without escalating privilege",
+      "entry": "static_app_info",
+      "steps": [
+        "fetch_app_info",
+        "check_remote_control_false",
+        "check_treatment_false",
+        "decline_audio_request"
+      ],
+      "positive": "Agent truthfully states PWA can only demonstrate controls",
+      "negative": "No audio.start/session.observe or user impersonation from public metadata",
+      "precondition": "Read-only public context",
+      "authorization": "read_only",
+      "support": {
+        "windows_desktop": "not_demonstrated",
+        "macos_desktop": "not_demonstrated",
+        "linux_desktop": "not_demonstrated",
+        "android_phone": "not_demonstrated",
+        "android_tablet": "not_demonstrated",
+        "iphone": "not_demonstrated",
+        "ipad": "not_demonstrated",
+        "desktop_web": "not_demonstrated",
+        "mobile_browser": "not_demonstrated",
+        "visual_pwa": "input_only",
+        "automation_cli": "not_demonstrated",
+        "agent_api": "not_demonstrated"
+      },
+      "evidence": [
+        "PR37"
+      ],
+      "releaseBlockers": [
+        "dedicated authenticated agent API absent",
+        "physical playback authority never available from public preview"
+      ]
+    }
+  ]
+}
