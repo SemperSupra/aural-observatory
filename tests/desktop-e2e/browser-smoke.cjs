@@ -53,7 +53,7 @@ async function run(){
  assert.equal(await page.locator('#right-hz').inputValue(),'6100');
  assert.equal(await page.locator('#left-colour').inputValue(),'5');
  assert.equal(await page.locator('#right-colour').inputValue(),'6');
- assert.equal(await page.locator('audio').evaluate(x=>x.autoplay),false);
+ assert.equal(await page.locator('#sound').evaluate(x=>x.autoplay),false);
  await page.locator('#theme').selectOption('2');
  assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
  await page.locator('#font-size').evaluate(x=>{x.value='150';x.dispatchEvent(new Event('change',{bubbles:true}));});
