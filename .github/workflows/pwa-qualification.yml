@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: aural-r14-pwa-qualification
+  group: aural-r14-pwa-qualification-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   static:
