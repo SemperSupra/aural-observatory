@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cd tests/desktop-e2e
+          cd web/tests
           npm install --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium firefox webkit
       - name: Real Chromium/Firefox/WebKit mobile, tablet, desktop tests plus axe
