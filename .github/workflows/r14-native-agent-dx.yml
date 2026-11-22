@@ -1,0 +1,36 @@
+name: R14 native Android, automation and agent DX source parity
+on:
+  pull_request:
+    paths:
+      - 'scripts/evaluation/r14/native_agent_dx_audit.py'
+      - 'docs/evaluation/r14/NATIVE-AGENT-DX.md'
+      - '.github/workflows/r14-native-agent-dx.yml'
+      - 'src/AuralObservatory.Android/**'
+      - 'src/AuralObservatory.Core/SpatialTouchIntentProjector.cs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-truth-and-capability-gaps:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-26]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Audit native/automation/agent source and emit machine report
+        run: python scripts/evaluation/r14/native_agent_dx_audit.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r14-native-agent-gaps-${{ runner.os }}
+          path: artifacts/evaluation/r14/native-dx/
+          retention-days: 14
+          if-no-files-found: error
