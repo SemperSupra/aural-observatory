@@ -65,7 +65,7 @@ func (t *Tone) Render(dst []int16) error {
   if t.stopped||t.frame>=t.plan.Frames(){ sample=0 }
   if t.plan.Ear==Both||t.plan.Ear==Left {dst[2*i]=sample}else{dst[2*i]=0}
   if t.plan.Ear==Both||t.plan.Ear==Right {dst[2*i+1]=sample}else{dst[2*i+1]=0}
-  t.frame++
+  if t.frame<t.plan.Frames(){t.frame++}
  }
  return nil
 }
