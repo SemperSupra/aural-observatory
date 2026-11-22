@@ -53,8 +53,7 @@
       deck.appendChild(panel);
       cards.push({tab,panel,key:group.key});
     }
-    const firstSource = main.querySelector('#configuration');
-    // The first source has already moved; the safety introduction remains in main.
+    // The safety introduction remains visible above the deck.
     main.appendChild(deck);
     // Keep future source additions visible rather than hiding them silently.
     let current = 0;
@@ -86,8 +85,9 @@
       toolbar.querySelector('#deck-next').disabled=current===cards.length-1;
       count.textContent='Card '+(current+1)+' of '+cards.length+' · '+groups[current].label;
       announce('');
+      try{window.sessionStorage.setItem('aural-card',groups[current].key);}catch{}
       const selected=cards[current].tab;
-      selected.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+      selected.scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'});
       if (focus) selected.focus({preventScroll:true});
       return true;
     }
@@ -132,9 +132,6 @@
     // Persist only UI layout choice; do not store personal audio or health data.
     let start=0;
     try{const stored=window.sessionStorage.getItem('aural-card');const idx=groups.findIndex(g=>g.key===stored);if(idx>=0)start=idx;}catch{}
-    const originalSelect=select;
-    function remember(index,focus=false){const changed=originalSelect(index,focus);if(changed)try{sessionStorage.setItem('aural-card',groups[current].key);}catch{}return changed;}
-    // Navigation above intentionally calls select; per-tab session persistence is best-effort and nonessential.
     select(start);
   }
   if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true});
