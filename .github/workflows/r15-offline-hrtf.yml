@@ -1,0 +1,39 @@
+name: R15 offline HRTF rendering evidence — no sound hardware
+on:
+  pull_request:
+    paths:
+      - 'tests/spatial-rdte/**'
+      - '.github/workflows/r15-offline-hrtf.yml'
+      - 'docs/R15-SPATIAL-HRTF-RDTE.md'
+  push:
+    branches: ['experiment/r15-offline-hrtf-rdte']
+    paths:
+      - 'tests/spatial-rdte/**'
+      - '.github/workflows/r15-offline-hrtf.yml'
+      - 'docs/R15-SPATIAL-HRTF-RDTE.md'
+permissions: {contents: read}
+concurrency:
+  group: r15-offline-hrtf-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  synthetic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: {persist-credentials: false}
+      - name: Install pinned test-only browser library
+        working-directory: tests/desktop-e2e
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install headless Chromium and WebKit
+        working-directory: tests/desktop-e2e
+        run: npx playwright install --with-deps chromium webkit
+      - name: Render deterministic synthetic signal to offline buffers only
+        run: node tests/spatial-rdte/offline-hrtf.cjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r15-hrtf-offline-transfer
+          path: artifacts/audio/r15/offline-hrtf.json
+          if-no-files-found: warn
+          retention-days: 7
