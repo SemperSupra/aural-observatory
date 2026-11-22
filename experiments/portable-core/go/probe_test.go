@@ -78,6 +78,18 @@ func TestNoRenderHeapAlloc(t *testing.T){
 }
 func BenchmarkToneRender1024(b *testing.B){
  tone,_:=NewTone(Sweep{StartHz:500,EndHz:8000,Seconds:15,Ear:Both})
- dst:=make([]int16,2048);b.ReportAllocs();b.ResetTimer()
- for i:=0;i<b.N;i++ {if err:=tone.Render(dst);err!=nil{b.Fatal(err)}}
+ dst:=make([]int16,2048)
+ b.ReportAllocs()
+ b.SetBytes(int64(len(dst)*2))
+ b.ResetTimer()
+ for i:=0;i<b.N;i++ {
+  // The earlier benchmark exhausted the 15-second budget and mostly timed silence.
+  // Reset ONLY inside this same-package synthetic benchmark, never in the public API.
+  if tone.frame+uint64(len(dst)/2)>tone.plan.Frames() {
+   tone.frame=0
+   tone.phase=0
+   tone.stopped=false
+  }
+  if err:=tone.Render(dst);err!=nil{b.Fatal(err)}
+ }
 }
