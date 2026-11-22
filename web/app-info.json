@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "product": "Aural Observatory",
+  "producer": "SemperSupra",
+  "surface": "visual-pwa-preview",
+  "release_status": "experimental-visual-only",
+  "version": "r14-preview-1",
+  "source_repository": "https://github.com/SemperSupra/aural-observatory",
+  "canonical_url": "https://sempersupra.github.io/aural-observatory/",
+  "offline_shell": true,
+  "acoustic_output": false,
+  "biometric_data": false,
+  "remote_control": false,
+  "treatment_claims": false,
+  "interfaces": {
+    "human": "./index.html",
+    "automation": "./app-info.json",
+    "agent": "./app-info.json"
+  },
+  "limitations": [
+    "No generated or recorded audio",
+    "No standalone WASM DSP parity",
+    "No calibrated headphone SPL or device STOP qualification",
+    "No real device accessibility signoff",
+    "No personal observations are saved"
+  ]
+}
