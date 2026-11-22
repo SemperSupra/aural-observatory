@@ -60,7 +60,10 @@
     function playing() {
       const trial = document.getElementById('sound');
       const manual = document.getElementById('manual-sound');
-      return Boolean((trial && !trial.paused && !trial.ended) ||
+      const studyArmed = document.getElementById('mode')?.disabled === true;
+      const preparing = document.getElementById('manual-start')?.disabled === true;
+      return Boolean(studyArmed || preparing ||
+                     (trial && !trial.paused && !trial.ended) ||
                      (manual && !manual.paused && !manual.ended));
     }
     function announce(message,isError=false) {
@@ -70,7 +73,7 @@
     function select(index,focus=false) {
       if (index<0||index>=cards.length) return false;
       if (current!==index && playing()) {
-        announce('Stop the current sound before changing cards. STOP SOUND remains available here.',true);
+        announce('An audio preview or study phase is active. STOP SOUND before changing cards; do not abandon the after-sound observation.',true);
         return false;
       }
       current=index;
@@ -107,11 +110,11 @@
       const trial=document.getElementById('sound');
       const manual=document.getElementById('manual-sound');
       let sent=false;
-      if (trial && !trial.paused && !trial.ended) {
+      if (trial && ((!trial.paused && !trial.ended) || document.getElementById('mode')?.disabled === true)) {
         document.getElementById('stop')?.click();
         sent=true;
       }
-      if (manual && !manual.paused && !manual.ended) {
+      if (manual && ((!manual.paused && !manual.ended) || document.getElementById('manual-start')?.disabled === true)) {
         document.getElementById('manual-stop')?.click();
         sent=true;
       }
@@ -122,16 +125,16 @@
     // Within-page links can select their owning workspace without hidden-target traps.
     const owner = new Map(groups.flatMap((group,index)=>group.sections.map(id=>[id,index])));
     document.querySelectorAll('header nav a[href^="#"]').forEach(link=>{
-      link.addEventListener('click',()=>{
+      link.addEventListener('click',event=>{
         const key=link.getAttribute('href').slice(1);
-        if (owner.has(key)) {
-          if(!select(owner.get(key),false)) return;
-        }
+        if (owner.has(key) && !select(owner.get(key),false)) event.preventDefault();
       });
     });
     // Persist only UI layout choice; do not store personal audio or health data.
     let start=0;
     try{const stored=window.sessionStorage.getItem('aural-card');const idx=groups.findIndex(g=>g.key===stored);if(idx>=0)start=idx;}catch{}
+    const initialHash = location.hash.slice(1);
+    if (owner.has(initialHash)) start=owner.get(initialHash);
     select(start);
   }
   if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true});
