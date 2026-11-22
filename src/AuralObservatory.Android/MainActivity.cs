@@ -35,6 +35,8 @@ public sealed class MainActivity : Activity
     private CheckBox _leftNotch = null!, _rightNotch = null!;
     private TextView _status = null!;
     private Button _play = null!;
+    private EditText _sweepStartHz = null!, _sweepEndHz = null!, _sweepDuration = null!;
+    private Spinner _sweepMode = null!, _sweepEar = null!;
     private CancellationTokenSource? _cancellation;
     private AudioTrack? _track;
     private bool _recordable;
@@ -124,6 +126,14 @@ public sealed class MainActivity : Activity
 
         _play = AddButton(soundPanel, "START 15-SECOND PREVIEW", () => StartPreview());
         AddButton(soundPanel, "STOP", StopPreview);
+        AddText(soundPanel, "OPTIONAL SINGLE SWEEP (not a hearing test or treatment)", 17);
+        AddText(soundPanel, "Low device volume; 8–15 seconds only. Select direction by setting start and end frequencies. The separate randomized quiet search is unchanged.", 12);
+        _sweepMode = AddChoice(soundPanel, "Sweep signal", new[] { "Reference tone", "Moving notch on existing noise" }, 0);
+        _sweepEar = AddChoice(soundPanel, "Sweep ear", new[] { "Both", "Left", "Right" }, 0);
+        _sweepStartHz = AddNumber(soundPanel, "Sweep start Hz (200–10000)", "500");
+        _sweepEndHz = AddNumber(soundPanel, "Sweep end Hz (200–10000)", "8000");
+        _sweepDuration = AddNumber(soundPanel, "Sweep seconds (8–15)", "10");
+        AddButton(soundPanel, "START ONE-TIME SWEEP", StartSweepPreview);
         var sensorPanel = AddExpandableSection(layout,"Sensors and BLE measurements",false);
         AddText(sensorPanel, "LIVE HEART-RATE SENSOR (OPTIONAL)", 19);
         AddText(sensorPanel, "Garmin HRM-Pro Plus / compatible BLE 0x180D strap. Live BPM and optional RR intervals. These do NOT detect tinnitus suppression. No upload or cloud connection.", 12);
@@ -179,12 +189,36 @@ public sealed class MainActivity : Activity
         ApplyAppearance();
     }
 
-    private void StartPreview()
+    private void StartSweepPreview()
+    {
+        if (_cancellation is not null) { _status.Text = "Stop current playback before starting a sweep."; return; }
+        if (_search?.State is SearchState.Stimulating or SearchState.PostStimulus)
+        { _status.Text = "Finish or stop the quiet-search trial before using manual sweep."; return; }
+        try
+        {
+            if (!int.TryParse(_sweepDuration.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int seconds))
+                throw new ArgumentException("Sweep seconds must be an integer from 8 to 15.");
+            var mode = _sweepMode.SelectedItemPosition == 0
+                ? AcousticSweepMode.ReferenceTone : AcousticSweepMode.NotchCenter;
+            var ear = _sweepEar.SelectedItemPosition switch
+            {
+                1 => SearchEar.Left,
+                2 => SearchEar.Right,
+                _ => SearchEar.Both
+            };
+            var sweep = new AcousticSweep(mode, Parse(_sweepStartHz), Parse(_sweepEndHz), seconds, ear);
+            sweep.Validate();
+            StartPreview(sweep);
+        }
+        catch (Exception ex) { _status.Text = "Sweep rejected: " + ex.Message; }
+    }
+
+    private void StartPreview(AcousticSweep? sweep = null)
     {
         if (_cancellation != null) return;
         try
         {
-            var settings = CaptureSettings();
+            var settings = CaptureSettings() with { Sweep = sweep };
             var engine = new StimulusEngine(settings);
             _configurationSnapshot = string.Join(",", settings.Left.FrequencyHz, settings.Right.FrequencyHz,
                 settings.Left.Colour, settings.Right.Colour, settings.Left.NotchEnabled, settings.Right.NotchEnabled,
@@ -204,8 +238,10 @@ public sealed class MainActivity : Activity
             lock (_audioLock) { _track = track; _cancellation = cts; }
             _recordable = false;
             _play.Enabled = false;
-            _status.Text = "Playing 15-second experimental preview. STOP is available.";
-            _ = Task.Run(() => RenderPlayback(engine, track, cts));
+            _status.Text = sweep is null
+                ? "Playing 15-second experimental preview. STOP is available."
+                : $"Playing {sweep.DurationSeconds}-second manual {sweep.Mode} sweep. STOP is available.";
+            _ = Task.Run(() => RenderPlayback(engine, track, cts, sweep));
         }
         catch (Exception ex)
         {
@@ -214,10 +250,11 @@ public sealed class MainActivity : Activity
         }
     }
 
-    private void RenderPlayback(StimulusEngine engine, AudioTrack track, CancellationTokenSource cts)
+    private void RenderPlayback(StimulusEngine engine, AudioTrack track, CancellationTokenSource cts,
+        AcousticSweep? sweep)
     {
         const int framesPerBlock = 1024;
-        const int durationFrames = 15 * StimulusValidation.SampleRate;
+        int durationFrames = sweep?.TotalFrames ?? 15 * StimulusValidation.SampleRate;
         var buffer = new short[framesPerBlock * 2];
         bool completed = false;
         try
@@ -259,7 +296,7 @@ public sealed class MainActivity : Activity
             RunOnUiThread(() =>
             {
                 _play.Enabled = true;
-                _recordable = finalCompleted;
+                _recordable = finalCompleted && sweep is null;
                 if (_search?.State == SearchState.Stimulating)
                 {
                     if (finalCompleted)
@@ -275,7 +312,9 @@ public sealed class MainActivity : Activity
                         _searchStatus.Text = "Audio interrupted: trial excluded from ranking.";
                     }
                 }
-                if (finalCompleted) _status.Text = "15-second preview completed. Rate symptoms after silence.";
+                if (finalCompleted) _status.Text = sweep is null
+                    ? "15-second preview completed. Rate symptoms after silence."
+                    : "Manual sweep completed. No clinical inference or quiet-search score was recorded.";
                 else if (_status.Text?.StartsWith("Audio error:", StringComparison.Ordinal) != true)
                     _status.Text = "Stopped; incomplete preview not eligible for outcome logging.";
             });
