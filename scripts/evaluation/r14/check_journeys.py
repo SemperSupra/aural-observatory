@@ -17,14 +17,14 @@ AUDIENCES = {"human", "automation", "agent"}
 ALLOWED_AUTH = {"human", "human_required", "host_verified", "human_preempt", "read_only", "automation"}
 APPROVED_OS = {"windows_desktop", "macos_desktop", "linux_desktop", "android_phone",
                "android_tablet", "iphone", "ipad", "desktop_web", "mobile_browser",
-               "automation_cli", "agent_api"}
+               "visual_pwa", "automation_cli", "agent_api"}
 STATES = {"not_demonstrated", "planned", "input_only", "test_harness_only",
           "source_compiled", "emulated_browser", "browser_tested",
           "ci_qualified", "real_device_qualified"}
 KNOWN_STUDY = {"H05", "H06", "H07", "H08", "H09", "G04", "G05", "A06"}
 MATRIX_ORDER = ["windows_desktop", "macos_desktop", "linux_desktop", "android_phone",
                 "android_tablet", "iphone", "ipad", "desktop_web",
-                "mobile_browser", "automation_cli", "agent_api"]
+                "mobile_browser", "visual_pwa", "automation_cli", "agent_api"]
 def main():
     body = json.loads(DOC.read_text(encoding="utf-8"))
     errors = []
@@ -138,7 +138,7 @@ def main():
         for e in errors:
             print("FAIL:",e,file=sys.stderr)
         return 1
-    print(f"PASS R14 evidence manifest: {len(cases)} structured journeys / 3 audiences / 11 surfaces")
+    print(f"PASS R14 evidence manifest: {len(cases)} structured journeys / 3 audiences / 12 surfaces")
     print("HOLD release: 0 real-device-verified journeys; agent control API not admitted")
     return 0
 if __name__ == "__main__":
