@@ -1,0 +1,43 @@
+name: R13 OSD-inspired contextual touch controller — mobile/tablet browser matrix
+on:
+  pull_request:
+    paths:
+      - 'src/AuralObservatory.SearchDesktop/wwwroot/mobile-controller.**'
+      - 'tests/desktop-e2e/r13-mobile-touch.cjs'
+      - '.github/workflows/r13-mobile-touch-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  phone-tablet-touch:
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      AURAL_TOUCH_BROWSER: ${{ matrix.browser }}
+      AURAL_NO_BROWSER: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install declared test libraries
+        working-directory: tests/desktop-e2e
+        run: npm install --no-audit --no-fund
+      - name: Provision browser and native dependencies on disposable runner
+        working-directory: tests/desktop-e2e
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Real browser touch/pointer, STOP, portrait/landscape, accessibility
+        run: node tests/desktop-e2e/r13-mobile-touch.cjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r13-touch-${{ matrix.browser }}-evidence
+          path: artifacts/ui/r13-touch/
+          retention-days: 14
+          if-no-files-found: warn
