@@ -51,9 +51,6 @@
     // A top-view map shows angle around the head; center is the listening head.
     dot.style.left = (50 + Math.sin(normalizedAzimuth) * (12 + 35 * normalizedRadius)) + '%';
     dot.style.top = (50 - Math.cos(normalizedAzimuth) * (12 + 35 * normalizedRadius)) + '%';
-    pad.setAttribute('aria-valuetext',
-      'Azimuth ' + Math.round(position.azimuth) + ' degrees, elevation ' +
-      Math.round(position.elevation) + ' degrees, distance ' + position.distance.toFixed(1));
     if (panner && enable.checked && eligible() && audioContext) {
       const now = audioContext.currentTime;
       panner.positionX.setTargetAtTime(x, now, .025);
@@ -174,7 +171,7 @@
     (manualPending ? byId('manual-stop') : byId('stop')).click();
   }
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
+    if (e.key === 'Escape' && !e.repeat) {
       stopPlayback();
       announce('STOP requested locally; actual host/device silence is not measured.');
     }
