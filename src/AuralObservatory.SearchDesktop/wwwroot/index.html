@@ -45,6 +45,22 @@ fieldset{min-width:0;border:1px solid var(--border);border-radius:.6rem;padding:
 <button id="save-audio">Save sound profile for next trial</button>
 <p id="audio-config-status" role="status" aria-live="polite">No sound configuration changes saved in this session.</p>
 </section>
+<section id="manual-sweep" aria-labelledby="manual-sweep-title">
+<h2 id="manual-sweep-title">Optional manual frequency sweep</h2>
+<p>Experimental pitch comparison, not a hearing threshold or tinnitus treatment. Headphone loudness is not calibrated. Each preview is 8–15 seconds at the existing saved digital gain; keep your device volume low and stop if uncomfortable.</p>
+<div class="grid">
+<label for="manual-mode">Sweep signal <select id="manual-mode"><option value="ReferenceTone">Reference tone</option><option value="NotchCenter">Moving notch in saved noise spectrum</option></select></label>
+<label for="manual-ear">Ear <select id="manual-ear"><option value="Both">Both</option><option value="Left">Left</option><option value="Right">Right</option></select></label>
+<label for="manual-start-hz">Start frequency (Hz) <input id="manual-start-hz" type="number" inputmode="decimal" min="200" max="10000" step="any" value="500"></label>
+<label for="manual-end-hz">End frequency (Hz) <input id="manual-end-hz" type="number" inputmode="decimal" min="200" max="10000" step="any" value="8000"></label>
+<label for="manual-seconds">Duration (8–15 seconds) <input id="manual-seconds" type="number" inputmode="numeric" min="8" max="15" step="1" value="10"></label>
+</div>
+<button id="manual-start">Prepare and play one sweep</button>
+<button id="manual-resume" disabled>Play prepared sweep</button>
+<button id="manual-stop">Stop manual sweep</button>
+<p id="manual-sweep-status" role="status" aria-live="polite">No sweep playing. Starting is always explicit. Manual sweeps are excluded from randomized quiet-search scores.</p>
+<audio id="manual-sound" preload="none"></audio>
+</section>
 <section id="experiment" aria-labelledby="experiment-title"><h2 id="experiment-title">1. Explore fixed-level sound trials</h2><p id="status" role="status" aria-live="polite">Ready. Each trial plays for 15 seconds. Press and hold during perceived quiet; continue holding after playback if tinnitus remains reduced.</p>
 <button id="next">Start / next trial</button> <button id="stop">Stop</button> <button id="reset-search">New search (retain observations)</button> <button id="exit-app">Exit application</button>
 <audio id="sound" preload="auto"></audio>
@@ -83,6 +99,56 @@ const api = async (url, data) => { const r = await fetch('/api/'+url,{method:'PO
 const status=document.querySelector('#status'),audio=document.querySelector('#sound'),hold=document.querySelector('#quiet');
 const mode=document.querySelector('#mode');
 let down=false, quiet=false, armed=false, active=false, post=false;
+// Manual preview is intentionally separate from the quiet-search audio element and journal.
+const manualSound=document.querySelector('#manual-sound');
+const manualStart=document.querySelector('#manual-start');
+const manualResume=document.querySelector('#manual-resume');
+const manualStatus=document.querySelector('#manual-sweep-status');
+let manualGeneration=0,manualBlobUrl=null,manualPending=false,manualPlaying=false;
+function releaseManualMedia(){
+ manualGeneration++;
+ manualSound.pause();manualSound.removeAttribute('src');manualSound.load();
+ if(manualBlobUrl){URL.revokeObjectURL(manualBlobUrl);manualBlobUrl=null;}
+ manualPending=false;manualPlaying=false;manualStart.disabled=false;manualResume.disabled=true;
+}
+async function stopManual(){
+ releaseManualMedia();
+ try{await api('sweep-stop');manualStatus.textContent='Manual sweep stopped; no quiet-search result recorded.';}
+ catch(e){manualStatus.textContent='Playback stopped locally; remote cleanup unavailable: '+e.message;}
+}
+manualStart.addEventListener('click',async()=>{
+ if(manualPending||manualPlaying)return;
+ if(active||post){manualStatus.textContent='Finish or stop the randomized quiet-search trial first.';return;}
+ manualPending=true;manualStart.disabled=true;
+ const generation=++manualGeneration;
+ try{
+  const request={mode:document.querySelector('#manual-mode').value,ear:document.querySelector('#manual-ear').value,
+    startHz:Number(document.querySelector('#manual-start-hz').value),
+    endHz:Number(document.querySelector('#manual-end-hz').value),
+    seconds:Number(document.querySelector('#manual-seconds').value)};
+  const receipt=await api('sweep',request);
+  if(generation!==manualGeneration){await api('sweep-stop');return;}
+  const response=await fetch(receipt.source,{headers:{'X-Aural-Token':token},cache:'no-store'});
+  if(!response.ok)throw Error('Authenticated manual audio fetch failed ('+response.status+').');
+  const blob=await response.blob();
+  if(generation!==manualGeneration){await api('sweep-stop');return;}
+  manualBlobUrl=URL.createObjectURL(blob);
+  manualSound.src=manualBlobUrl;
+  manualPending=false;manualPlaying=true;manualResume.disabled=false;
+  manualStatus.textContent='Prepared '+receipt.durationSeconds+'-second manual sweep; playback requires a user gesture.';
+  try{await manualSound.play();manualStatus.textContent='Manual sweep playing. STOP remains available.';}
+  catch(e){manualStatus.textContent='Audio prepared; select Play prepared sweep to authorize playback.';}
+ }catch(e){
+  releaseManualMedia();
+  void api('sweep-stop').catch(()=>{});
+  manualStatus.textContent='Sweep rejected: '+e.message;
+ }
+});
+manualResume.addEventListener('click',async()=>{try{await manualSound.play();manualStatus.textContent='Manual sweep playing. STOP remains available.';}catch(e){manualStatus.textContent='Could not play: '+e.message;}});
+document.querySelector('#manual-stop').addEventListener('click',()=>{void stopManual();});
+manualSound.addEventListener('ended',()=>{void stopManual();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&(manualPlaying||manualPending))void stopManual();});
+window.addEventListener('pagehide',releaseManualMedia);
 function msg(x){status.textContent=x;}
 function resetInput(){down=false;quiet=false;armed=false;keyboardQuietHeld=false;hold.classList.remove('down');hold.textContent=mode.value==='ReleaseWhenQuiet'?'HOLD WHILE AUDIBLE; RELEASE WHEN QUIET':mode.value==='ToggleQuiet'?'TAP WHEN QUIET (TOGGLE)':'PRESS AND HOLD WHEN QUIET';}
 function updateLabel(){hold.classList.toggle('down',quiet);hold.textContent=mode.value==='ReleaseWhenQuiet'?(down?'AUDIBLE — RELEASE WHEN QUIET':'RELEASED — QUIET MARK ACTIVE'):mode.value==='ToggleQuiet'?(quiet?'QUIET ACTIVE — TAP TO END':'TAP WHEN QUIET (TOGGLE)'):(quiet?'QUIET ACTIVE — RELEASE TO END':'PRESS AND HOLD WHEN QUIET');}
