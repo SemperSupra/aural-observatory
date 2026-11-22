@@ -50,6 +50,15 @@ const cases=[
    await page.waitForFunction(()=>document.getElementById('prefs-status').textContent.includes('loaded'),null,{timeout:20000});
    assert.equal(await page.locator('body > header nav').isHidden(),true,'no duplicate classic navigation when deck is active');
    assert.equal(await page.locator('[role=tab]').count(),4,'four separate workspaces');
+   if(p.width<=500){
+    const geometry=await page.evaluate(()=>({layout:getComputedStyle(document.querySelector('.deck-tabs')).display,
+      tabs:[...document.querySelectorAll('#aural-workspace-deck [role=tab]')].map(el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,height:r.height,width:r.width}}),
+      prevHidden:getComputedStyle(document.querySelector('#deck-prev')).display==='none'}));
+    assert.equal(geometry.layout,'grid','explicit 2x2 picker not a swipe-only carousel');
+    assert.equal(geometry.prevHidden,true,'unnecessary arrows hidden when all four tabs exposed');
+    assert.ok(geometry.tabs.every(t=>t.left>=0&&t.right<=p.width+1&&t.width>=44&&t.height>=44),
+      'all tabs visible and reachable at phone width '+JSON.stringify(geometry));
+   }
    assert.equal(await page.locator('[role=tabpanel]:visible').count(),1,'only one card visible');
    assert.equal(await page.locator('#deck-tab-sound').getAttribute('aria-selected'),'true');
    assert.equal(await page.locator('#deck-stop').isVisible(),true);
