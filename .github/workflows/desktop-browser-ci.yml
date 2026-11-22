@@ -28,6 +28,8 @@ jobs:
         if: always()
         with:
           name: r9-desktop-browser-evidence
-          path: artifacts/ui/desktop-browser-smoke.json
+          path: |
+            artifacts/ui/desktop-browser-smoke.json
+            artifacts/ui/r12-spatial-controller.png
           retention-days: 14
           if-no-files-found: warn
