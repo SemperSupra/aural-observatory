@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Aural Observatory Quiet Search</title>
+<link rel="stylesheet" href="/card-deck.css">
 <style>
 :root{--bg:#f6f8fb;--panel:#fff;--fg:#17202e;--muted:#42526a;--border:#aebace;--accent:#213e64;--accentText:#fff;--focus:#d16b00;--font:system-ui,sans-serif;color-scheme:light}
 :root[data-theme=dark]{--bg:#121820;--panel:#222d3a;--fg:#f2f6fc;--muted:#d4deea;--border:#7d92aa;--accent:#a4caef;--accentText:#111c2b;--focus:#ffe28b;color-scheme:dark}
@@ -414,4 +415,4 @@ document.querySelector('#import-prefs').addEventListener('click',async()=>{
  }catch(e){prefsStatus.textContent='Import was rejected; previous settings preserved: '+e.message;}
 });
 
-</script><script src="/controller.js" defer></script><script src="/mobile-controller.js" defer></script></body></html>
+</script><script src="/controller.js" defer></script><script src="/mobile-controller.js" defer></script><script src="/card-deck.js" defer></script></body></html>
