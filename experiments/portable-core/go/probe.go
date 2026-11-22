@@ -40,12 +40,13 @@ type Tone struct {
  plan Sweep
  frame uint64
  phase float64
+ logStep float64
  stopped bool
 }
 // NewTone verifies the complete configuration before producing any sound-domain samples.
 func NewTone(s Sweep)(*Tone,error) {
  if err:=s.Validate();err!=nil{return nil,err}
- return &Tone{plan:s},nil
+ return &Tone{plan:s,logStep:math.Log(s.EndHz/s.StartHz)/float64(s.Frames()-1)},nil
 }
 func (t *Tone) Stop() { if t!=nil {t.stopped=true} }
 // Render writes caller-owned interleaved PCM16. No device access or allocations are needed.
@@ -54,7 +55,7 @@ func (t *Tone) Render(dst []int16) error {
  for i:=0;i<len(dst)/2;i++ {
   var sample int16
   if !t.stopped&&t.frame<t.plan.Frames() {
-   hz,_:=t.plan.FrequencyAt(t.frame)
+   hz:=t.plan.StartHz*math.Exp(t.logStep*float64(t.frame))
    t.phase+=2*math.Pi*hz/SampleRate
    if t.phase>=2*math.Pi {t.phase-=2*math.Pi}
    ramp:=math.Min(1,float64(t.frame)/(0.1*SampleRate))
