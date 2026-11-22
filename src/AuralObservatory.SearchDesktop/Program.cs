@@ -58,6 +58,11 @@ app.MapGet("/controller.js", () => Results.File(
     Path.Combine(AppContext.BaseDirectory, "wwwroot", "controller.js"), "text/javascript; charset=utf-8"));
 app.MapGet("/controller.css", () => Results.File(
     Path.Combine(AppContext.BaseDirectory, "wwwroot", "controller.css"), "text/css; charset=utf-8"));
+// Local-only R13 UI input assets: no session token, network, or audio endpoint.
+app.MapGet("/mobile-controller.js", () => Results.File(
+    Path.Combine(AppContext.BaseDirectory, "wwwroot", "mobile-controller.js"), "text/javascript; charset=utf-8"));
+app.MapGet("/mobile-controller.css", () => Results.File(
+    Path.Combine(AppContext.BaseDirectory, "wwwroot", "mobile-controller.css"), "text/css; charset=utf-8"));
 app.MapGet("/api/preferences", () =>
 {
     lock(gate) return Results.Json(preferences);
