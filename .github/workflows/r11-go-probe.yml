@@ -1,0 +1,33 @@
+name: R11 Go alternative core probe (synthetic, nonproduction)
+on:
+  pull_request:
+    paths:
+      - 'experiments/portable-core/go/**'
+      - 'experiments/portable-core/fixtures/**'
+      - '.github/workflows/r11-go-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  stdlib-conformance:
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-26]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: experiments/portable-core/go
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5
+        with:
+          go-version: '1.23.12'
+          cache: false
+      - run: go version
+      - name: Fixed-fixture conformance and no-alloc test
+        run: go test -count=1 -v ./...
+      - name: Synthetic throughput and allocation baseline, not real-time proof
+        run: go test -run '^$' -bench BenchmarkToneRender1024 -benchtime=0.5s -benchmem ./...
