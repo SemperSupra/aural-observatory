@@ -76,6 +76,14 @@ async function runCase(browser,engine,device){
  assert.ok(moved.el>3&&moved.dist>1,JSON.stringify({device,moved,message:'right controls changed'}));
  assert.equal(await page.locator('#manual-sound').evaluate(x=>x.paused),true,'two-touch control cannot start audio');
  assert.equal(await page.locator('#sound').evaluate(x=>x.paused),true,'two-touch control cannot start randomized trial');
+ // Capture the real interactive geometry WHILE both independent pads are held.
+ // Later idle screenshots intentionally show neutral/inactive touch rings.
+ const pictureDir=path.join(repo,'artifacts','ui','r13-touch');
+ fs.mkdirSync(pictureDir,{recursive:true});
+ await page.locator('#aural-touch-overlay').screenshot({
+   path:path.join(pictureDir,engine+'-'+device.name+'-active-dual-touch.png'),
+   animations:'disabled'
+ });
  // Pointer cancellation only affects the owning touch identity.
  await pointer(page,'left','pointercancel',41,lx+40,ly-40);
  assert.equal(await page.locator('#touch-left-base').isHidden(),true,'left cancel drops left touch');
