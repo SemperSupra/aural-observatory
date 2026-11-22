@@ -44,7 +44,10 @@ function compact(x){return JSON.stringify(x);}
 async function scenario(browser,name,profile){
  const context=await browser.newContext({
   viewport:{width:profile.width,height:profile.height},
-  hasTouch:profile.touch, isMobile:profile.touch, deviceScaleFactor:profile.touch?2:1,
+  // Playwright Firefox supports touch but not isMobile viewport meta emulation.
+  // Explicitly record that this is viewport+touch coverage, not mobile UA HIL.
+  hasTouch:profile.touch, isMobile:profile.touch && name!=='firefox',
+  deviceScaleFactor:profile.touch?2:1,
   reducedMotion:'reduce',colorScheme:'dark',forcedColors:'none',
  });
  const page=await context.newPage();
