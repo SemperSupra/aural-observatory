@@ -5,7 +5,7 @@ Source strings are only static evidence. This tool must NEVER claim verified
 permissions, audio effects, published agent endpoints or a real-device HIL.
 """
 from pathlib import Path
-import json, re, sys
+import json, re, sys, subprocess
 from collections import Counter
 
 root=Path(__file__).resolve().parents[3]
@@ -20,7 +20,18 @@ for x in files:
     if not x.exists():
         errors.append(f"missing owning source: {x.relative_to(root)}")
 def read(f):return f.read_text(encoding="utf-8") if f.exists() else ""
-sdesktop, sandroid, stouch, score, sdle=map(read,files)
+sdesktop_current, sandroid, stouch, score, sdle=map(read,files)
+# The Android R13 branch is NOT a merged desktop R13 release. Inspect the
+# exact current desktop sibling via a read-only remote ref rather than falsely
+# reporting missing manual-sweep features on an unrelated native lineage.
+desktop_ref="refs/remotes/origin/feat/r13-osd-inspired-mobile-overlay"
+probe=subprocess.run(["git","show",desktop_ref+":src/AuralObservatory.SearchDesktop/Program.cs"],
+                     cwd=root,text=True,capture_output=True,check=False)
+if probe.returncode!=0:
+    errors.append("desktop sibling ref unavailable (fetch source; do not infer merged runtime)")
+    sdesktop=""
+else:
+    sdesktop=probe.stdout
 methods=re.findall(r'app\.Map(Get|Post|Put|Delete)\(\s*"(/api/[^"]+)"',sdesktop)
 routes=[{"verb":method.upper(),"path":path} for method,path in methods]
 for gate in [
@@ -63,6 +74,9 @@ agent_gap=[a["operation"] for a in control if a["status"]=="NOT_IMPLEMENTED"]
 if not agent_gap: errors.append("false claim: agent API fully qualified")
 out={"schema_version":"aural.r14.source-parity.v1",
      "source_refs":{str(x.relative_to(root)):True for x in files},
+     "desktop_source_ref":desktop_ref,
+     "source_branches_are_unmerged_siblings":True,
+     "combined_release_binary_qualified":False,
      "desktop_api_routes":routes,
      "counts":{"local_token_routes":len(routes),"agent_apis_qualified":0,
                "native_spatial_audio_qualified":0,
@@ -92,6 +106,7 @@ markdown+=["","## Release vetoes","",
  "- Android touch display currently exposes no audible spatial HRTF effect.",
  "- Browsers on a different mobile device cannot connect to the 127.0.0.1 desktop host.",
  "- No versioned per-principal agent session/CAS/idempotency authority exists in Aural runtime.",
+ "- Desktop and native Android source currently live on unmerged sibling PR branches; no combined release binary qualified.",
  "- Real TalkBack/VoiceOver, Android/iPad HIL and Bluetooth/gamepad UX remain unqualified.",
  "","Audit verdict: "+("FAIL source drift" if errors else "PASS source inventory, HOLD product admission"),
  ""]
