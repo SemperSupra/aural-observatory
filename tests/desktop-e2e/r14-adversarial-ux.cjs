@@ -64,6 +64,7 @@ async function scenario(browser,name,profile){
   return r.status;
  });
  assert.equal(denial,403,'agent/automation cannot forge local controller token');
+ await page.locator('#deck-tab-spatial').click();
  await page.locator('#touch-controller-open').click();
  assert.equal(await page.locator('#aural-touch-overlay').isVisible(),true);
  assert.equal(await page.locator('main').evaluate(x=>x.inert),true);
