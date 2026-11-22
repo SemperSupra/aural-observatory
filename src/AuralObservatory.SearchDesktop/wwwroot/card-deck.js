@@ -8,8 +8,8 @@
     const main = document.querySelector('main#content');
     if (!main || document.getElementById('aural-workspace-deck')) return;
     const groups = [
-      {key:'sound',label:'Sound setup',sections:['configuration','manual-sweep']},
-      {key:'spatial',label:'Spatial control',sections:['spatial-controller']},
+      {key:'sound',label:'Sound setup',sections:['configuration']},
+      {key:'spatial',label:'Spatial lab',sections:['manual-sweep','spatial-controller']},
       {key:'search',label:'Quiet search',sections:['experiment','response','feedback']},
       {key:'settings',label:'Preferences',sections:['appearance']}
     ];
