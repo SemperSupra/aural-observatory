@@ -52,6 +52,12 @@ app.MapGet("/", () =>
         .Replace("__SESSION_TOKEN__", token, StringComparison.Ordinal);
     return Results.Content(html, "text/html; charset=utf-8");
 });
+// Local-loopback, immutable UI assets. They contain no session token and
+// do not expose API actions, devices, recordings or credentials.
+app.MapGet("/controller.js", () => Results.File(
+    Path.Combine(AppContext.BaseDirectory, "wwwroot", "controller.js"), "text/javascript; charset=utf-8"));
+app.MapGet("/controller.css", () => Results.File(
+    Path.Combine(AppContext.BaseDirectory, "wwwroot", "controller.css"), "text/css; charset=utf-8"));
 app.MapGet("/api/preferences", () =>
 {
     lock(gate) return Results.Json(preferences);
