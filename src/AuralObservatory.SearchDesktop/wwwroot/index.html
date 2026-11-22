@@ -13,7 +13,7 @@ small,.muted{color:var(--muted)}textarea{width:100%;min-height:85px}#status{whit
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:1rem}.grid>*{min-width:0}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 fieldset{min-width:0;border:1px solid var(--border);border-radius:.6rem;padding:.85rem}legend{font-weight:600;padding:0 .4rem}fieldset input[type=number],fieldset select{width:100%}#configuration .grid{align-items:start}
-</style></head>
+</style><link rel="stylesheet" href="/controller.css"></head>
 <body><a href="#content" class="skip">Skip to the research controls</a>
 <header><h1>Aural Observatory · Quiet Search</h1>
 <nav aria-label="Sections"><a href="#configuration">Configure</a><a href="#experiment">Explore</a><a href="#feedback">Feedback</a><a href="#appearance">Appearance and presets</a></nav></header>
@@ -61,6 +61,49 @@ fieldset{min-width:0;border:1px solid var(--border);border-radius:.6rem;padding:
 <button id="manual-stop">Stop manual sweep</button>
 <p id="manual-sweep-status" role="status" aria-live="polite">No sweep playing. Starting is always explicit. Manual sweeps are excluded from randomized quiet-search scores.</p>
 <audio id="manual-sound" preload="none"></audio>
+</section>
+<section id="spatial-controller" aria-labelledby="spatial-title">
+<h2 id="spatial-title">Optional 3D spatial sound controller</h2>
+<p><strong>Exploratory manual reference tone only.</strong> Move a source around your head using the circular pad, keyboard, or a connected USB/Bluetooth controller. HRTF spatialization operates on the existing C#-generated bilateral reference-tone WAV, not the randomized study, and does not change quiet-search scores.</p>
+<p>3D spatialization is <strong>off by default</strong> and uses additional fixed digital attenuation. This is not calibrated headphone SPL; keep device volume low. Moving sound cannot start playback—use the existing manual preview controls above to start it deliberately.</p>
+<label><input id="spatial-enable" type="checkbox"> Enable 3D HRTF positioning for bilateral Reference tone</label>
+<div class="spatial-layout">
+<div>
+<p id="spatial-pad-label">Move sound around head (top view)</p>
+<div id="spatial-pad" role="group" tabindex="0" aria-label="Virtual spatial joystick. Drag or use Left and Right arrows to turn; Up and Down arrows change elevation; Home resets to the front.">
+<span class="spatial-compass n">Front</span><span class="spatial-compass s">Behind</span>
+<span class="spatial-compass e">R ear</span><span class="spatial-compass w">L ear</span>
+<span class="spatial-head" aria-hidden="true">Head</span><span id="spatial-emitter" aria-hidden="true"></span>
+</div>
+<div class="spatial-map-row"><button type="button" id="spatial-center">Center sound in front</button></div>
+</div>
+<div>
+<label for="spatial-azimuth">Azimuth: <output id="spatial-value-azimuth" for="spatial-azimuth">0°</output></label>
+<input id="spatial-azimuth" type="range" min="-180" max="180" step="1" value="0">
+<label for="spatial-elevation">Elevation: <output id="spatial-value-elevation" for="spatial-elevation">0°</output></label>
+<input id="spatial-elevation" type="range" min="-45" max="45" step="1" value="0">
+<label for="spatial-distance">Relative distance: <output id="spatial-value-distance" for="spatial-distance">1.0×</output></label>
+<input id="spatial-distance" type="range" min="1" max="3" step="0.1" value="1">
+<p class="spatial-small">The circular pad and sliders work with touch, mouse, or keyboard. These coordinates control an HRTF renderer; perceived direction depends on headphones and individual hearing. Ear-specific noise/notch sweeps are excluded to preserve left/right experimental isolation.</p>
+<p><strong>Stop:</strong> use the manual STOP button above, the controller STOP mapping, or Escape. STOP requests are local and do not establish measured acoustic silence.</p>
+</div>
+</div>
+<fieldset><legend>Physical gamepad (optional)</legend>
+<label><input type="checkbox" id="spatial-use-gamepad"> Enable physical gamepad controls</label>
+<label for="spatial-gamepads">Device <select id="spatial-gamepads"><option value="">Choose connected controller</option></select></label>
+<p id="spatial-gamepad-status" class="spatial-small" role="status" aria-live="polite">Connect a controller and press a button to make it visible to the browser.</p>
+<p class="spatial-small">Xbox standard layout defaults: left stick X turns, left stick Y changes elevation, right stick Y changes distance; A marks the manual tone, B stops, X centers. Logitech Rumblepad 2 and other DirectInput devices may expose different axes and button numbers: select the observed mappings below. Gamepad input never starts audio.</p>
+<div class="spatial-controller-mappings">
+<label for="spatial-axis-yaw">Turn axis<select id="spatial-axis-yaw"><option value="0" selected>Axis 0</option><option value="1">Axis 1</option><option value="2">Axis 2</option><option value="3">Axis 3</option><option value="4">Axis 4</option><option value="5">Axis 5</option><option value="6">Axis 6</option><option value="7">Axis 7</option></select></label>
+<label for="spatial-axis-elevation">Elevation axis<select id="spatial-axis-elevation"><option value="0">Axis 0</option><option value="1" selected>Axis 1</option><option value="2">Axis 2</option><option value="3">Axis 3</option><option value="4">Axis 4</option><option value="5">Axis 5</option><option value="6">Axis 6</option><option value="7">Axis 7</option></select></label>
+<label for="spatial-axis-distance">Distance axis<select id="spatial-axis-distance"><option value="0">Axis 0</option><option value="1">Axis 1</option><option value="2">Axis 2</option><option value="3" selected>Axis 3</option><option value="4">Axis 4</option><option value="5">Axis 5</option><option value="6">Axis 6</option><option value="7">Axis 7</option></select></label>
+<label for="spatial-button-mark">Mark button<select id="spatial-button-mark"><option value="0" selected>Button 0</option><option value="1">Button 1</option><option value="2">Button 2</option><option value="3">Button 3</option><option value="4">Button 4</option><option value="5">Button 5</option><option value="6">Button 6</option><option value="7">Button 7</option><option value="8">Button 8</option><option value="9">Button 9</option><option value="10">Button 10</option><option value="11">Button 11</option><option value="12">Button 12</option><option value="13">Button 13</option><option value="14">Button 14</option><option value="15">Button 15</option><option value="16">Button 16</option><option value="17">Button 17</option></select></label>
+<label for="spatial-button-stop">STOP button<select id="spatial-button-stop"><option value="0">Button 0</option><option value="1" selected>Button 1</option><option value="2">Button 2</option><option value="3">Button 3</option><option value="4">Button 4</option><option value="5">Button 5</option><option value="6">Button 6</option><option value="7">Button 7</option><option value="8">Button 8</option><option value="9">Button 9</option><option value="10">Button 10</option><option value="11">Button 11</option><option value="12">Button 12</option><option value="13">Button 13</option><option value="14">Button 14</option><option value="15">Button 15</option><option value="16">Button 16</option><option value="17">Button 17</option></select></label>
+<label for="spatial-button-center">Center button<select id="spatial-button-center"><option value="0">Button 0</option><option value="1">Button 1</option><option value="2" selected>Button 2</option><option value="3">Button 3</option><option value="4">Button 4</option><option value="5">Button 5</option><option value="6">Button 6</option><option value="7">Button 7</option><option value="8">Button 8</option><option value="9">Button 9</option><option value="10">Button 10</option><option value="11">Button 11</option><option value="12">Button 12</option><option value="13">Button 13</option><option value="14">Button 14</option><option value="15">Button 15</option><option value="16">Button 16</option><option value="17">Button 17</option></select></label>
+</div>
+<p class="spatial-small">If a controller does not appear, the operating system or browser may not expose its legacy HID/DirectInput interface. The virtual controller remains available without drivers or accounts.</p>
+</fieldset>
+<p id="spatial-status" role="status" aria-live="polite">Position: front, at baseline distance. Spatial playback disabled until explicitly enabled. No audio starts from controller movement.</p>
 </section>
 <section id="experiment" aria-labelledby="experiment-title"><h2 id="experiment-title">1. Explore fixed-level sound trials</h2><p id="status" role="status" aria-live="polite">Ready. Each trial plays for 15 seconds. Press and hold during perceived quiet; continue holding after playback if tinnitus remains reduced.</p>
 <button id="next">Start / next trial</button> <button id="stop">Stop</button> <button id="reset-search">New search (retain observations)</button> <button id="exit-app">Exit application</button>
@@ -354,4 +397,4 @@ document.querySelector('#import-prefs').addEventListener('click',async()=>{
  }catch(e){prefsStatus.textContent='Import was rejected; previous settings preserved: '+e.message;}
 });
 
-</script></body></html>
+</script><script src="/controller.js" defer></script></body></html>
