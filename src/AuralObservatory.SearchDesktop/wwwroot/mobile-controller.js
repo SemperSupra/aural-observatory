@@ -237,10 +237,48 @@
   window.addEventListener('pagehide',()=>{if(visible)close()});
   window.addEventListener('resize',cancelAll);
   window.addEventListener('orientationchange',cancelAll);
+  // A role=dialog/aria-modal attribute does not trap keyboard focus.
+  // Explicitly contain both Tab directions, including when a disabled
+  // control or browser-specific focus edge changes the focusable set.
+  function focusables(){
+    return Array.from(overlay.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
+      'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+      .filter(el => el.getClientRects().length && !el.hidden);
+  }
+  function containFocus(event){
+    if(!visible || event.key!=='Tab')return;
+    const choices=focusables();
+    if(!choices.length){
+      event.preventDefault();
+      get('touch-emergency-stop').focus({preventScroll:true});
+      return;
+    }
+    const first=choices[0],last=choices[choices.length-1];
+    const current=document.activeElement;
+    if(!overlay.contains(current)){
+      event.preventDefault();
+      (event.shiftKey?last:first).focus({preventScroll:true});
+    }else if(event.shiftKey && current===first){
+      event.preventDefault();
+      last.focus({preventScroll:true});
+    }else if(!event.shiftKey && current===last){
+      event.preventDefault();
+      first.focus({preventScroll:true});
+    }
+  }
   overlay.addEventListener('keydown',e=>{
     if(e.key==='Escape'){
       e.preventDefault();e.stopPropagation();
       close();
+      return;
     }
+    containFocus(e);
+  });
+  // Programmatic focus escape (e.g. stale controls and assistive technology)
+  // is also returned to STOP. Do not override legitimate focus after close.
+  document.addEventListener('focusin',e=>{
+    if(visible&&!overlay.contains(e.target))
+      get('touch-emergency-stop').focus({preventScroll:true});
   });
 })();
