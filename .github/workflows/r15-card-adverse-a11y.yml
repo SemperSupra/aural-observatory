@@ -1,0 +1,43 @@
+name: R15 independent adverse accessibility and STOP control
+on:
+  pull_request:
+    paths:
+      - 'tests/desktop-e2e/r15-card-adverse-a11y.cjs'
+      - '.github/workflows/r15-card-adverse-a11y.yml'
+      - 'src/AuralObservatory.SearchDesktop/**'
+permissions:
+  contents: read
+concurrency:
+  group: r15-adverse-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, firefox, webkit]
+    env:
+      AURAL_R15_ADVERSE_BROWSER: ${{ matrix.engine }}
+      AURAL_NO_BROWSER: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: {persist-credentials: false}
+      - uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d
+        with: {dotnet-version: '10.0.x'}
+      - name: Install test dependencies
+        working-directory: tests/desktop-e2e
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install real browser
+        working-directory: tests/desktop-e2e
+        run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Run adverse source-backed no-audio controls
+        run: node tests/desktop-e2e/r15-card-adverse-a11y.cjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r15-adverse-${{ matrix.engine }}
+          path: artifacts/ui/r15-adverse-a11y/
+          retention-days: 7
+          if-no-files-found: warn
