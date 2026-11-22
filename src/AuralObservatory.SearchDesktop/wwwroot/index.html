@@ -66,7 +66,7 @@ fieldset{min-width:0;border:1px solid var(--border);border-radius:.6rem;padding:
 <section id="spatial-controller" aria-labelledby="spatial-title">
 <h2 id="spatial-title">Optional 3D spatial sound controller</h2>
 <p><strong>Exploratory manual reference tone only.</strong> Move a source around your head using the circular pad, keyboard, or a connected USB/Bluetooth controller. HRTF spatialization operates on the existing C#-generated bilateral reference-tone WAV, not the randomized study, and does not change quiet-search scores.</p>
-<p>3D spatialization is <strong>off by default</strong> and uses additional fixed digital attenuation. This is not calibrated headphone SPL; keep device volume low. Moving sound cannot start playback—use the existing manual preview controls above to start it deliberately.</p>
+<p>3D spatialization is <strong>off by default</strong> and uses additional fixed digital attenuation. <strong>Use headphones for the intended binaural HRTF experiment.</strong> Ordinary stereo speakers mix left/right signals at both ears and may make 3D effects weak or misleading; loudspeaker spatialization is not qualified. The browser HRTF is generic, and reference-tone sweeps are not a validated localization test. This is not calibrated headphone SPL; keep device volume low. Moving sound cannot start playback—use the manual preview controls in this card to start it deliberately.</p>
 <label><input id="spatial-enable" type="checkbox"> Enable 3D HRTF positioning for bilateral Reference tone</label>
 <div class="spatial-layout">
 <div>
