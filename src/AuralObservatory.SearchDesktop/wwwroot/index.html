@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Aural Observatory Quiet Search</title>
+<link rel="stylesheet" href="/card-deck.css">
 <style>
 :root{--bg:#f6f8fb;--panel:#fff;--fg:#17202e;--muted:#42526a;--border:#aebace;--accent:#213e64;--accentText:#fff;--focus:#d16b00;--font:system-ui,sans-serif;color-scheme:light}
 :root[data-theme=dark]{--bg:#121820;--panel:#222d3a;--fg:#f2f6fc;--muted:#d4deea;--border:#7d92aa;--accent:#a4caef;--accentText:#111c2b;--focus:#ffe28b;color-scheme:dark}
@@ -15,7 +16,7 @@ small,.muted{color:var(--muted)}textarea{width:100%;min-height:85px}#status{whit
 fieldset{min-width:0;border:1px solid var(--border);border-radius:.6rem;padding:.85rem}legend{font-weight:600;padding:0 .4rem}fieldset input[type=number],fieldset select{width:100%}#configuration .grid{align-items:start}
 </style><link rel="stylesheet" href="/controller.css"><link rel="stylesheet" href="/mobile-controller.css"></head>
 <body><a href="#content" class="skip">Skip to the research controls</a>
-<header><h1>Aural Observatory · Quiet Search</h1>
+<header><h1>Aural Observatory</h1>
 <nav aria-label="Sections"><a href="#configuration">Configure</a><a href="#spatial-controller">Spatial controller</a><a href="#experiment">Explore</a><a href="#feedback">Feedback</a><a href="#appearance">Appearance and presets</a></nav></header>
 <main id="content" tabindex="-1">
 <p>Research tool, not medical treatment. Begin at a low device volume. Generated PCM level is not headphone SPL. This search <strong>never raises gain</strong>.</p>
@@ -65,7 +66,7 @@ fieldset{min-width:0;border:1px solid var(--border);border-radius:.6rem;padding:
 <section id="spatial-controller" aria-labelledby="spatial-title">
 <h2 id="spatial-title">Optional 3D spatial sound controller</h2>
 <p><strong>Exploratory manual reference tone only.</strong> Move a source around your head using the circular pad, keyboard, or a connected USB/Bluetooth controller. HRTF spatialization operates on the existing C#-generated bilateral reference-tone WAV, not the randomized study, and does not change quiet-search scores.</p>
-<p>3D spatialization is <strong>off by default</strong> and uses additional fixed digital attenuation. This is not calibrated headphone SPL; keep device volume low. Moving sound cannot start playback—use the existing manual preview controls above to start it deliberately.</p>
+<p>3D spatialization is <strong>off by default</strong> and uses additional fixed digital attenuation. <strong>Use headphones for the intended binaural HRTF experiment.</strong> Ordinary stereo speakers mix left/right signals at both ears and may make 3D effects weak or misleading; loudspeaker spatialization is not qualified. The browser HRTF is generic, and reference-tone sweeps are not a validated localization test. This is not calibrated headphone SPL; keep device volume low. Moving sound cannot start playback—use the manual preview controls in this card to start it deliberately.</p>
 <label><input id="spatial-enable" type="checkbox"> Enable 3D HRTF positioning for bilateral Reference tone</label>
 <div class="spatial-layout">
 <div>
@@ -414,4 +415,4 @@ document.querySelector('#import-prefs').addEventListener('click',async()=>{
  }catch(e){prefsStatus.textContent='Import was rejected; previous settings preserved: '+e.message;}
 });
 
-</script><script src="/controller.js" defer></script><script src="/mobile-controller.js" defer></script></body></html>
+</script><script src="/controller.js" defer></script><script src="/mobile-controller.js" defer></script><script src="/card-deck.js" defer></script></body></html>

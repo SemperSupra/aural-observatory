@@ -53,6 +53,7 @@ async function runCase(browser,engine,device){
  assert.equal(await page.locator('#aural-touch-overlay').isHidden(),true,'opt-in modal hidden by default');
  assert.equal(await page.locator('#sound').evaluate(el=>el.paused),true,'no randomized trial starts on mobile');
  assert.equal(await page.locator('#manual-sound').evaluate(el=>el.paused),true,'no manual preview starts on mobile');
+ await page.locator('#deck-tab-spatial').click();
  await page.locator('#touch-controller-open').click();
  assert.equal(await page.locator('#aural-touch-overlay').isVisible(),true);
  assert.equal(await page.locator('main').evaluate(x=>x.inert),true,'background content must be inert');

@@ -1,0 +1,35 @@
+/* R15: spatially compact, keyboard-first OSD-pattern card deck.
+   Scoped to #aural-workspace-deck; does not modify audio or experiment state. */
+#aural-workspace-deck{margin:1rem 0}
+#aural-workspace-deck .deck-toolbar{position:sticky;top:0;z-index:20;background:var(--bg);border:1px solid var(--border);border-radius:.85rem;padding:.55rem .65rem;box-shadow:0 6px 16px #091c2b18}
+#aural-workspace-deck .deck-nav{display:flex;align-items:center;gap:.5rem}
+#aural-workspace-deck .deck-tabs{display:flex;gap:.35rem;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;min-width:0;flex:1;padding:3px;scrollbar-width:thin}
+#aural-workspace-deck .deck-tab{flex:0 0 auto;scroll-snap-align:start;min-height:44px;padding:.5rem .7rem;margin:0;background:var(--panel);border:1px solid var(--border);color:var(--fg);white-space:nowrap;font-weight:650}
+#aural-workspace-deck .deck-tab[aria-selected=true]{background:var(--accent);color:var(--accentText);box-shadow:inset 0 -3px 0 var(--focus)}
+#aural-workspace-deck .deck-step{min-width:44px;min-height:44px;margin:0;padding:.35rem .65rem;background:var(--panel);color:var(--fg);border:1px solid var(--border)}
+#aural-workspace-deck .deck-step:disabled{opacity:.45}
+#aural-workspace-deck .deck-tools{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-top:.5rem}
+#aural-workspace-deck .deck-count{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums;min-width:0}
+#aural-workspace-deck .deck-global-stop{min-height:48px;background:#8b2525;color:#fff;border:2px solid #fff;box-shadow:0 0 0 1px #8b2525;margin:0;padding:.55rem .9rem;font-weight:800}
+#aural-workspace-deck .deck-global-stop:focus-visible{outline:3px solid var(--focus)}
+#aural-workspace-deck .deck-panel{min-width:0}
+#aural-workspace-deck .deck-panel[hidden]{display:none!important}
+#aural-workspace-deck .deck-panel>section{margin:1rem 0}
+#aural-workspace-deck .deck-panel>section:first-child{margin-top:.8rem}
+#aural-workspace-deck .deck-alert{margin:.5rem 0 0;color:var(--fg);font-size:.9rem;min-height:1.25rem}
+#aural-workspace-deck .deck-alert[data-alert=error]{font-weight:700;color:var(--focus)}
+@media(min-width:1000px){body:has(#aural-workspace-deck){max-width:1040px}#aural-workspace-deck .deck-panel>section{padding:1.15rem}}
+@media(max-width:500px){
+  #aural-workspace-deck .deck-toolbar{padding:.45rem}
+  /* 2 × 2 explicit tab grid: no hidden choices, no carousel gesture over controls. */
+  #aural-workspace-deck .deck-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;max-width:100%;overflow:visible;scroll-snap-type:none;gap:.3rem}
+  #aural-workspace-deck .deck-nav .deck-step{display:none}
+  #aural-workspace-deck .deck-tab{min-width:0;width:100%;font-size:.94rem;padding:.5rem .35rem;white-space:normal;line-height:1.22}
+  #aural-workspace-deck .deck-count{flex:1}
+  #aural-workspace-deck .deck-global-stop{width:100%}
+}
+@media(prefers-reduced-motion:reduce){#aural-workspace-deck .deck-tabs{scroll-behavior:auto}}
+@media(forced-colors:active){#aural-workspace-deck .deck-tab[aria-selected=true]{outline:2px solid Highlight}#aural-workspace-deck .deck-global-stop{forced-color-adjust:auto;border:2px solid ButtonText}}
+
+/* Avoid duplicate long-scroll navigation after the accessible deck initializes. */
+body > header nav[hidden]{display:none!important}

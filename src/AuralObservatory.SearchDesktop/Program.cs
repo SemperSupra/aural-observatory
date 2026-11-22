@@ -63,6 +63,11 @@ app.MapGet("/mobile-controller.js", () => Results.File(
     Path.Combine(AppContext.BaseDirectory, "wwwroot", "mobile-controller.js"), "text/javascript; charset=utf-8"));
 app.MapGet("/mobile-controller.css", () => Results.File(
     Path.Combine(AppContext.BaseDirectory, "wwwroot", "mobile-controller.css"), "text/css; charset=utf-8"));
+// R15 presentation-only card deck; no additional API or sound effect surface.
+app.MapGet("/card-deck.js", () => Results.File(
+    Path.Combine(AppContext.BaseDirectory, "wwwroot", "card-deck.js"), "text/javascript; charset=utf-8"));
+app.MapGet("/card-deck.css", () => Results.File(
+    Path.Combine(AppContext.BaseDirectory, "wwwroot", "card-deck.css"), "text/css; charset=utf-8"));
 app.MapGet("/api/preferences", () =>
 {
     lock(gate) return Results.Json(preferences);
