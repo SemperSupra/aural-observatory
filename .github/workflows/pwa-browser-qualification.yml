@@ -1,0 +1,39 @@
+name: R14 real-browser visual PWA qualification
+on:
+  pull_request:
+    paths:
+      - 'web/**'
+      - '.github/workflows/pwa-browser-qualification.yml'
+  push:
+    branches: ['feat/r14-pwa-publication-brand-review']
+    paths:
+      - 'web/**'
+      - '.github/workflows/pwa-browser-qualification.yml'
+permissions:
+  contents: read
+concurrency:
+  group: aural-r14-pwa-browser-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install pinned direct browser test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd web/tests
+          npm install --ignore-scripts --no-audit --no-fund
+          npx playwright install --with-deps chromium firefox webkit
+      - name: Real Chromium/Firefox/WebKit mobile, tablet, desktop tests plus axe
+        run: node web/tests/browser.cjs
+      - name: Export screenshots and machine receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: r14-visual-pwa-browser-evidence
+          path: web/evidence/
+          retention-days: 7
+          if-no-files-found: warn

@@ -1,0 +1,10 @@
+{
+  "name": "aural-visual-pwa-browser-qualification",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Synthetic no-audio browser qualification for static Pages preview",
+  "devDependencies": {
+    "playwright": "1.57.0",
+    "@axe-core/playwright": "4.11.0"
+  }
+}

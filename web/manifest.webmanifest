@@ -1,0 +1,19 @@
+{
+  "name": "Aural Observatory — Visual Preview",
+  "short_name": "Aural Observatory",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#14242c",
+  "theme_color": "#14242c",
+  "description": "Offline-capable visual controls preview; no audio playback or personal data collection.",
+  "icons": [
+    {
+      "src": "./mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

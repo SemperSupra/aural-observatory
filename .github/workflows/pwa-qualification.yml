@@ -1,0 +1,28 @@
+name: R14 public visual PWA qualification
+on:
+  pull_request:
+    paths: ['web/**', 'docs/R14-BRAND-PWA-PUBLICATION.md', '.github/workflows/pwa-qualification.yml', '.github/workflows/pwa-pages.yml']
+  push:
+    branches: ['feat/r14-pwa-publication-brand-review']
+    paths: ['web/**', 'docs/R14-BRAND-PWA-PUBLICATION.md', '.github/workflows/pwa-qualification.yml', '.github/workflows/pwa-pages.yml']
+permissions:
+  contents: read
+concurrency:
+  group: aural-r14-pwa-qualification-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Offline Node standard-library contract tests (no dependencies)
+        run: node --test web/tests/*.test.mjs
+      - name: Reject tracked user data and credential-like assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find web -type f \( -iname '*.csv' -o -iname '*.key' -o -iname '*.pem' -o -iname '*.p12' -o -iname '*.sqlite' -o -iname '*.wav' -o -iname '*.mp3' \) | grep .; then
+            echo 'Unexpected data, secrets or audio in public web projection' >&2
+            exit 1
+          fi
